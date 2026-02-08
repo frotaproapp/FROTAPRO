@@ -20,32 +20,38 @@ jobs:
         with:
           node-version: 20
 
-      # 3️⃣ Instala dependências
+      # 3️⃣ Instala dependências do projeto
       - name: Install dependencies
         run: npm ci
 
-      # 4️⃣ Instala Supabase CLI
-      - name: Install Supabase CLI
-        run: npm install -g supabase@latest
+      # 4️⃣ Baixa Supabase CLI sem instalar global
+      - name: Install Supabase CLI locally
+        run: |
+          mkdir -p supabase-cli
+          curl -L https://github.com/supabase/cli/releases/latest/download/supabase_$(uname -s)_$(uname -m).tar.gz | tar xz -C supabase-cli
+        shell: bash
 
-      # 5️⃣ Linka o projeto Supabase
+      # 5️⃣ Adiciona Supabase CLI local ao PATH
+      - name: Add Supabase CLI to PATH
+        run: echo "$PWD/supabase-cli" >> $GITHUB_PATH
+
+      # 6️⃣ Linka o projeto Supabase
       - name: Link Supabase project
         env:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: supabase link --project-ref $SUPABASE_PROJECT_REF --yes
 
-      # 6️⃣ Repara migrations caso necessário
+      # 7️⃣ Repara migrations se necessário
       - name: Repair migrations
         run: |
           for MIGRATION in $(supabase migration list --json | jq -r '.[] | select(.Remote=="") | .Local'); do
             supabase migration repair --status reverted $MIGRATION || true
           done
 
-      # 7️⃣ Aplica migrations no banco remoto
+      # 8️⃣ Aplica migrations no banco remoto
       - name: Push database migrations
         run: supabase db push --yes
 
-      # 8️⃣ (Opcional) Deploy funções ou frontend
-      # Aqui você pode adicionar comandos para build/deploy do frontend ou Edge Functions
+      # 9️⃣ Build do frontend (opcional)
       - name: Build frontend
         run: npm run build
