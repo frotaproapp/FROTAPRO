@@ -1,0 +1,52 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Verifica se é Super Admin (Proprietário do Sistema)
+    function isSuperAdmin() {
+      return request.auth.token.super_admin == true;
+    }
+
+    // Helper: Verifica se pertence à organização
+    function isOrgMember(orgId) {
+      return request.auth != null && request.auth.token.municipality_id == orgId;
+    }
+
+    // 🔒 TENANTS (PREFEITURAS) - Nível de Edital
+    // Leitura: Membros veem sua própria org. Super Admin vê tudo.
+    // Escrita: PROIBIDA. Somente via Cloud Functions (Admin SDK).
+    match /tenants/{tenantId} {
+      allow read: if isSuperAdmin() || isOrgMember(tenantId);
+      allow write: if false; 
+    }
+
+    // 🔒 AUDITORIA DE LICENÇAS - Imutável
+    // Leitura: Apenas Super Admin (Fiscalização/Auditoria).
+    // Escrita: PROIBIDA. Somente via Sistema Interno.
+    match /license_audit/{logId} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
+
+    // 🔒 AUDITORIA GERAL DO SISTEMA - Imutável
+    // Leitura: Apenas Super Admin.
+    match /audit_logs/{logId} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
+
+    // 🔒 DADOS OPERACIONAIS
+    // Só permite escrita se a licença estiver ATIVA
+    match /trips/{tripId} {
+      allow read: if isOrgMember(resource.data.municipalityId);
+      allow write: if isOrgMember(request.resource.data.municipalityId) && 
+                     get(/databases/$(database)/documents/tenants/$(request.resource.data.municipalityId)).data.license.status == 'ACTIVE';
+    }
+
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isSuperAdmin());
+      allow write: if false; // Gerenciado via Admin SDK / Functions
+    }
+  }
+}

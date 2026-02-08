@@ -1,0 +1,114 @@
+
+{
+  "rules": {
+    "settings": {
+      "general": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.token.role === 'SUPER_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'SUPER_ADMIN')"
+      }
+    },
+
+    "indices": {
+      "tenantsAll": {
+        ".read": "auth != null && (auth.token.role === 'SUPER_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'SUPER_ADMIN')",
+        ".write": false
+      },
+      "usersByTenant": {
+        "$tenantId": {
+          ".read": "auth != null && (auth.token.role === 'SUPER_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'SUPER_ADMIN' || auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+          ".write": false
+        }
+      },
+      "usersBySecretaria": {
+        "$secretariaId": {
+          ".read": "auth != null && (auth.token.role === 'SUPER_ADMIN' || auth.token.secretariaId === $secretariaId || root.child('users').child(auth.uid).child('secretariaId').val() === $secretariaId || root.child('users').child(auth.uid).child('role').val() === 'ADMIN_TENANT')",
+          ".write": false
+        }
+      }
+    },
+    
+    "tenants": {
+      ".indexOn": ["name"],
+      "$tenantId": {
+        ".read": "auth != null && (auth.token.role === 'SUPER_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'SUPER_ADMIN' || auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+        ".write": "auth != null && (auth.token.role === 'SUPER_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'SUPER_ADMIN')",
+        
+        "criadoEm": { ".validate": "newData.isNumber()" },
+
+        "settings": {
+           ".read": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId || auth.token.role === 'SUPER_ADMIN')",
+           ".write": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId || auth.token.role === 'SUPER_ADMIN') && (auth.token.role === 'ADMIN_TENANT' || auth.token.role === 'ORG_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'ADMIN_TENANT' || root.child('users').child(auth.uid).child('role').val() === 'ORG_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'SUPER_ADMIN')"
+        },
+
+        "solicitantes": {
+          ".read": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+          ".write": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+          "$sid": {
+             "criadoEm": { ".validate": "newData.isNumber()" }
+          }
+        },
+
+        "veiculos": {
+          ".indexOn": ["secretariaId"],
+          ".read": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+          ".write": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+          "$vid": {
+             "criadoEm": { ".validate": "newData.isNumber()" },
+             "atualizadoEm": { ".validate": "newData.isNumber()" }
+          }
+        },
+
+        "equipe": {
+          ".indexOn": ["secretariaId"],
+          ".read": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+          ".write": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+          "$pid": {
+             "criadoEm": { ".validate": "newData.isNumber()" },
+             "atualizadoEm": { ".validate": "newData.isNumber()" }
+          }
+        },
+
+        "viagens": {
+          ".indexOn": ["secretariaId", "driverUid", "driverId"],
+          ".read": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+          ".write": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+          "$tid": {
+             "criadoEm": { ".validate": "newData.isNumber()" },
+             "atualizadoEm": { ".validate": "newData.isNumber()" }
+          }
+        },
+        
+        "secretarias": {
+           ".indexOn": ["nome"],
+           ".read": "auth != null && (auth.token.role === 'SUPER_ADMIN' || auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId || root.child('users').child(auth.uid).child('role').val() === 'SUPER_ADMIN')",
+           ".write": "auth != null && (auth.token.role === 'ADMIN_TENANT' || auth.token.role === 'ORG_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'ADMIN_TENANT' || root.child('users').child(auth.uid).child('role').val() === 'ORG_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'SUPER_ADMIN')",
+           "$sid": {
+              "criadoEm": { ".validate": "newData.isNumber()" },
+              "atualizadoEm": { ".validate": "newData.isNumber()" }
+           }
+        }
+      }
+    },
+    
+    "users": {
+      ".indexOn": ["tenantId"],
+      ".read": false,
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.role === 'SUPER_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'SUPER_ADMIN' || (auth.token.tenantId === data.child('tenantId').val() && (root.child('users').child(auth.uid).child('role').val() === 'ADMIN_TENANT' || root.child('users').child(auth.uid).child('role').val() === 'ORG_ADMIN')))",
+        ".write": "auth != null && (auth.token.role === 'SUPER_ADMIN' || root.child('users').child(auth.uid).child('role').val() === 'SUPER_ADMIN')",
+        "criadoEm": { ".validate": "newData.isNumber()" },
+        "atualizadoEm": { ".validate": "newData.isNumber()" }
+      }
+    },
+
+    "auditLogs": {
+      "$tenantId": {
+        ".read": "auth != null && (auth.token.tenantId === $tenantId || root.child('users').child(auth.uid).child('tenantId').val() === $tenantId)",
+        ".write": "auth != null",
+        "$logId": {
+           "criadoEm": { ".validate": "newData.isNumber()" }
+        }
+      }
+    }
+  }
+}
