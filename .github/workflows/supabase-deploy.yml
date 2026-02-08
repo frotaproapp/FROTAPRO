@@ -1,42 +1,12 @@
-name: Deploy to Supabase
+- name: Deploy database
+  run: npx supabase db push --yes
+  env:
+    SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+    SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      # 1️⃣ Clonar repositório
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # 2️⃣ Instalar dependências
-      - name: Install dependencies
-        run: npm ci
-
-      # 3️⃣ Linkar projeto Supabase
-      - name: Link Supabase Project
-        run: npx supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-
-      # 4️⃣ Deploy do banco
-      - name: Deploy Database
-        run: npx supabase db push --yes
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-
-      # 5️⃣ Deploy das funções (opcional)
-      - name: Deploy Functions
-        run: |
-          npx supabase functions deploy my-function --no-verify-jwt
-          npx supabase functions deploy another-function --no-verify-jwt
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+- name: Deploy functions
+  run: |
+    npx supabase functions deploy my-function --no-verify-jwt
+  env:
+    SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+    SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
