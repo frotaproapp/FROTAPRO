@@ -3,7 +3,7 @@ name: Deploy Supabase
 on:
   push:
     branches:
-      - main
+      - main # O deploy será feito sempre que você enviar código para a branch main
 
 jobs:
   deploy:
@@ -13,18 +13,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Use a Action Oficial em vez de 'npm install -g'
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
       - name: Deploy Migrations
-        run: supabase db push --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} --password ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      # Se você tiver Edge Functions, descomente a linha abaixo:
+      # Opcional: Descomente abaixo se você usar Edge Functions
       # - name: Deploy Edge Functions
       #   run: supabase functions deploy --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
       #   env:
