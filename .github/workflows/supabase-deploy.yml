@@ -1,4 +1,4 @@
-name: Deploy FROTAPRO to Supabase
+name: Supabase Deploy
 
 on:
   push:
@@ -10,29 +10,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Clonar repositório
+      # 1️⃣ Checkout do código
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Instalar dependências
+      # 2️⃣ Instala Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      # 3️⃣ Instala dependências
       - name: Install dependencies
         run: npm ci
 
-      # 3️⃣ Deploy do banco Supabase
-      - name: Deploy database
-        run: npx supabase db push --yes
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # 4️⃣ Instala Supabase CLI
+      - name: Install Supabase CLI
+        run: npm install -g supabase@latest
 
-      # 4️⃣ Deploy das funções (opcional)
-      - name: Deploy Functions
+      # 5️⃣ Linka o projeto Supabase
+      - name: Link Supabase project
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: supabase link --project-ref $SUPABASE_PROJECT_REF --yes
+
+      # 6️⃣ Repara migrations caso necessário
+      - name: Repair migrations
         run: |
-          npx supabase functions deploy my-function --no-verify-jwt
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          for MIGRATION in $(supabase migration list --json | jq -r '.[] | select(.Remote=="") | .Local'); do
+            supabase migration repair --status reverted $MIGRATION || true
+          done
 
-      # 5️⃣ Mensagem de sucesso
-      - name: Success message
-        run: echo "Deploy FROTAPRO concluído com sucesso! 🚀"
+      # 7️⃣ Aplica migrations no banco remoto
+      - name: Push database migrations
+        run: supabase db push --yes
+
+      # 8️⃣ (Opcional) Deploy funções ou frontend
+      # Aqui você pode adicionar comandos para build/deploy do frontend ou Edge Functions
+      - name: Build frontend
+        run: npm run build
