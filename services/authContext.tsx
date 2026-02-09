@@ -32,26 +32,40 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
   const [userReady, setUserReady] = useState(false);
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('members')
-      .select('*, organizations(license_type, active)')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error, status } = await supabase
+        .from('members')
+        .select('*, organizations(license_type, active)')
+        .eq('id', userId)
+        .single();
 
-    if (error || !data) return null;
+      if (error) {
+        if (status === 404) {
+          console.error("Erro 404: Tabela 'members' não encontrada ou acesso negado. Verifique o banco de dados.");
+        } else {
+          console.error("Erro ao buscar perfil:", error.message);
+        }
+        return null;
+      }
 
-    const orgData = data.organizations as any;
+      if (!data) return null;
 
-    return {
-      id: data.id,
-      email: data.email,
-      role: data.role as UserRole,
-      name: data.name,
-      organization_id: data.organization_id,
-      tenantId: data.organization_id, // Mapeamento direto
-      secretariaId: data.secretaria_id,
-      license_status: (orgData?.active ? 'ACTIVE' : 'SUSPENDED') as LicenseStatus
-    };
+      const orgData = data.organizations as any;
+
+      return {
+        id: data.id,
+        email: data.email,
+        role: data.role as UserRole,
+        name: data.name,
+        organization_id: data.organization_id,
+        tenantId: data.organization_id,
+        secretariaId: data.secretaria_id,
+        license_status: (orgData?.active ? 'ACTIVE' : 'SUSPENDED') as LicenseStatus
+      };
+    } catch (err) {
+      console.error("Exceção ao buscar perfil:", err);
+      return null;
+    }
   };
 
   useEffect(() => {

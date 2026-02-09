@@ -114,12 +114,20 @@ ALTER TABLE professionals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Exemplo de política para VEÍCULOS (Somente mesma organização)
+-- POLÍTICAS PARA MEMBERS (Evitando recursão)
+CREATE POLICY "Usuários veem seu próprio perfil" ON members
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Membros veem outros da mesma org" ON members
+  FOR SELECT USING (
+    organization_id IN (
+      SELECT organization_id FROM members WHERE id = auth.uid()
+    )
+  );
+
+-- Outras políticas
 CREATE POLICY "Membros veem veiculos da sua org" ON vehicles
-  FOR ALL USING (organization_id = (SELECT organization_id FROM members WHERE id = auth.uid()));
+  FOR ALL USING (organization_id IN (SELECT organization_id FROM members WHERE id = auth.uid()));
 
 CREATE POLICY "Membros veem viagens da sua org" ON trips
-  FOR ALL USING (organization_id = (SELECT organization_id FROM members WHERE id = auth.uid()));
-
-CREATE POLICY "Membros veem membros da sua org" ON members
-  FOR ALL USING (organization_id = (SELECT organization_id FROM members WHERE id = auth.uid()));
+  FOR ALL USING (organization_id IN (SELECT organization_id FROM members WHERE id = auth.uid()));
