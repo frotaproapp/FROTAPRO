@@ -38,25 +38,25 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
         .from('members')
         .select('*')
         .eq('id', userId)
-        .single();
+        .order('created_at', { ascending: false })
+        .maybeSingle();
 
       if (memberError) {
-        if (status === 404) {
-          console.error("Erro 404: Usuário não encontrado na tabela 'members'.");
-        } else {
-          console.error("Erro ao buscar membro:", memberError.message);
-        }
+        console.error("Erro ao buscar membro:", memberError.message);
         return null;
       }
 
-      if (!memberData) return null;
+      if (!memberData) {
+        console.warn("Usuário não encontrado na tabela 'members'.");
+        return null;
+      }
 
-      // Busca a organização separadamente para evitar erro de relacionamento no cache do PostgREST
+      // Busca a organização separadamente
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('license_type, active')
         .eq('id', memberData.organization_id)
-        .single();
+        .maybeSingle();
 
       if (orgError) {
         console.error("Erro ao buscar organização:", orgError.message);
