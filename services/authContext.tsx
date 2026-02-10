@@ -33,33 +33,44 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error, status } = await supabase
+      // Busca o membro primeiro
+      const { data: memberData, error: memberError, status } = await supabase
         .from('members')
-        .select('*, organizations(license_type, active)')
+        .select('*')
         .eq('id', userId)
         .single();
 
-      if (error) {
+      if (memberError) {
         if (status === 404) {
-          console.error("Erro 404: Tabela 'members' não encontrada ou acesso negado. Verifique o banco de dados.");
+          console.error("Erro 404: Usuário não encontrado na tabela 'members'.");
         } else {
-          console.error("Erro ao buscar perfil:", error.message);
+          console.error("Erro ao buscar membro:", memberError.message);
         }
         return null;
       }
 
-      if (!data) return null;
+      if (!memberData) return null;
 
-      const orgData = data.organizations as any;
+      // Busca a organização separadamente para evitar erro de relacionamento no cache do PostgREST
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('license_type, active')
+        .eq('id', memberData.organization_id)
+        .single();
+
+      if (orgError) {
+        console.error("Erro ao buscar organização:", orgError.message);
+        // Retornamos o perfil mesmo sem os dados da org, com status padrão
+      }
 
       return {
-        id: data.id,
-        email: data.email,
-        role: data.role as UserRole,
-        name: data.name,
-        organization_id: data.organization_id,
-        tenantId: data.organization_id,
-        secretariaId: data.secretaria_id,
+        id: memberData.id,
+        email: memberData.email,
+        role: memberData.role as UserRole,
+        name: memberData.name,
+        organization_id: memberData.organization_id,
+        tenantId: memberData.organization_id,
+        secretariaId: memberData.secretaria_id,
         license_status: (orgData?.active ? 'ACTIVE' : 'SUSPENDED') as LicenseStatus
       };
     } catch (err) {
