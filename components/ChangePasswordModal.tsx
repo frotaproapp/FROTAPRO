@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { updatePassword } from 'firebase/auth';
-import { auth } from '../src/firebaseConfig';
+import { supabase } from '../services/supabaseClient';
 import { X, Lock, Save, AlertCircle } from 'lucide-react';
 
 interface ChangePasswordModalProps {
@@ -27,24 +26,19 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClos
       return;
     }
 
-    const user = auth.currentUser;
-    if (!user) {
-      setError('Sessão inválida. Faça login novamente.');
-      return;
-    }
-
     setLoading(true);
     try {
-      await updatePassword(user, newPassword);
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (updateError) throw updateError;
+
       alert('Senha alterada com sucesso! Use a nova senha no próximo login.');
       onClose();
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/requires-recent-login') {
-        setError('Por segurança, faça logout e login novamente antes de trocar a senha.');
-      } else {
-        setError('Erro ao trocar senha: ' + err.message);
-      }
+      setError('Erro ao trocar senha: ' + (err.message || 'Erro desconhecido'));
     } finally {
       setLoading(false);
     }

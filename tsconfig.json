@@ -22,5 +22,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["**/*.ts", "**/*.tsx", "src/declarations.d.ts"],
-  "exclude": ["node_modules", "netlify", "dist"]
+  "exclude": ["node_modules", "netlify", "dist", "firebase", "infra", "codigo-fonte"]
 }

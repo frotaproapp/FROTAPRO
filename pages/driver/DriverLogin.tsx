@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../../src/firebaseConfig';
+import { supabase } from '../../services/supabaseClient';
 import { Lock, Navigation } from 'lucide-react';
 import { useAuth } from '../../services/authContext';
 import { UserRole } from '../../types';
@@ -31,7 +31,11 @@ export const DriverLogin = () => {
     setError('');
     
     try {
-        await auth.signInWithEmailAndPassword(email, password);
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+        if (signInError) throw signInError;
         // O AuthContext vai detectar e o useEffect acima redirecionará
     } catch (err: any) {
         console.error(err);

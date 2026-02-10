@@ -24,7 +24,7 @@ export const BackupSystem = () => {
 
   useEffect(() => {
     carregarDados();
-  }, [user?.tenantId]);
+  }, [user?.id]);
 
   if (loading) return (
     <div className="p-20 text-center text-gray-500 flex flex-col items-center">
@@ -74,7 +74,7 @@ export const BackupSystem = () => {
                 <strong className="block mb-1 text-sm">🔒 Camada de Segurança Operacional</strong>
                 O sistema agora opera em modo de <strong>Indexação Estrita</strong>. O frontend está proibido de realizar varreduras globais (scans) no banco de dados. 
                 <br/><br/>
-                Isso garante que mesmo que um usuário mal-intencionado altere o código do cliente, as regras do Firebase impedirão o acesso a dados de outras prefeituras.
+                Isso garante que mesmo que um usuário mal-intencionado altere o código do cliente, as regras do Supabase (RLS) impedirão o acesso a dados de outras prefeituras.
               </div>
               
               <div className="p-4 bg-amber-50 text-amber-800 text-xs rounded-xl border border-amber-100 flex items-start shadow-sm">
