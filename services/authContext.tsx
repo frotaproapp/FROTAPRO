@@ -47,8 +47,52 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
       }
 
       if (!memberData) {
-        console.warn("Usuário não encontrado na tabela 'members'.");
-        return null;
+        console.warn("Usuário não encontrado na tabela 'members'. Tentando auto-criação...");
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return null;
+
+        // Tenta criar o registro do membro automaticamente
+        const newMember = {
+          id: userId,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || 'Novo Usuário',
+          role: UserRole.PADRAO,
+          active: true,
+          organization_id: session.user.user_metadata?.organization_id || null
+        };
+
+        const { data: createdData, error: createError } = await supabase
+          .from('members')
+          .insert([newMember])
+          .select()
+          .maybeSingle();
+
+        if (createError) {
+          console.error("Erro ao auto-criar membro:", createError.message);
+          // Fallback para perfil temporário se falhar (ex: falta de organization_id)
+          return {
+            id: userId,
+            email: session.user.email || '',
+            role: UserRole.PADRAO,
+            name: session.user.user_metadata?.name || 'Novo Usuário',
+            organization_id: '',
+            tenantId: '',
+            secretariaId: null,
+            license_status: 'ACTIVE' as LicenseStatus
+          };
+        }
+
+        return {
+          id: createdData.id,
+          email: createdData.email,
+          role: createdData.role as UserRole,
+          name: createdData.name,
+          organization_id: createdData.organization_id,
+          tenantId: createdData.organization_id,
+          secretariaId: createdData.secretaria_id,
+          license_status: 'ACTIVE' as LicenseStatus
+        };
       }
 
       // Busca a organização separadamente
