@@ -109,15 +109,15 @@ export const AdminDashboard = () => {
     setLoadingData(true);
     try {
       await api.admin.createTenant({ 
-        municipio: newTenant.name, 
+        name: newTenant.name, 
         email: newTenant.email, 
         cnpj: newTenant.cnpj, 
-        uf: newTenant.estado,
-        endereco: newTenant.address 
+        state: newTenant.estado,
+        address: newTenant.address 
       });
       setShowCreateModal(false);
       setNewTenant({ name: '', cnpj: '', estado: '', email: '', address: '' });
-      loadTenants();
+      await loadTenants();
     } catch (e: any) { 
       alert(e.message); 
     } finally {

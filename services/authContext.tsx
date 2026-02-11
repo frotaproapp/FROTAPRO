@@ -109,16 +109,20 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
         memberData.role = UserRole.SUPER_ADMIN;
       }
 
-      // Busca a organização separadamente
-      const { data: orgData, error: orgError } = await supabase
-        .from('organizations')
-        .select('license_type, active')
-        .eq('id', memberData.organization_id)
-        .maybeSingle();
-
-      if (orgError) {
-        console.error("Erro ao buscar organização:", orgError.message);
-        // Retornamos o perfil mesmo sem os dados da org, com status padrão
+      // Busca a organização separadamente se houver um organization_id válido
+      let orgData = null;
+      if (memberData.organization_id) {
+        const { data, error: orgError } = await supabase
+          .from('organizations')
+          .select('license_type, active')
+          .eq('id', memberData.organization_id)
+          .maybeSingle();
+        
+        if (orgError) {
+          console.error("Erro ao buscar organização:", orgError.message);
+        } else {
+          orgData = data;
+        }
       }
 
       return {
