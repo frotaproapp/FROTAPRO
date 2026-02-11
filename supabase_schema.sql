@@ -7,6 +7,7 @@ CREATE TABLE organizations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   cnpj TEXT UNIQUE,
+  email TEXT,
   state TEXT,
   address TEXT,
   active BOOLEAN DEFAULT true,
