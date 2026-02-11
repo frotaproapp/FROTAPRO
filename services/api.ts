@@ -204,7 +204,11 @@ export const api = {
       await supabase.from('organizations').delete().eq('id', tenantId);
     },
     createTenant: async (tenantData: any) => {
-      const { data } = await supabase.from('organizations').insert([tenantData]);
+      const { data, error } = await supabase.from('organizations').insert([tenantData]).select();
+      if (error) {
+        console.error("❌ Erro ao criar organização no Supabase:", error);
+        throw error;
+      }
       return data;
     }
   }

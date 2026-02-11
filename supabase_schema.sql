@@ -126,6 +126,21 @@ ALTER TABLE trips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE solicitantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
+-- POLÍTICAS PARA ORGANIZATIONS
+CREATE POLICY "Permitir leitura de organizações" ON organizations
+  FOR SELECT USING (true);
+
+CREATE POLICY "Super Admins podem criar organizações" ON organizations
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM members 
+      WHERE members.id = auth.uid() 
+      AND members.role = 'SUPER_ADMIN'
+    )
+    OR 
+    (SELECT count(*) FROM organizations) = 0 -- Permite criar a primeira org
+  );
+
 -- POLÍTICAS PARA MEMBERS (Evitando recursão)
 CREATE POLICY "Usuários veem seu próprio perfil" ON members
   FOR SELECT USING (auth.uid() = id);
