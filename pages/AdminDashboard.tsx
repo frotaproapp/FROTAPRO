@@ -119,7 +119,8 @@ export const AdminDashboard = () => {
       setNewTenant({ name: '', cnpj: '', estado: '', email: '', address: '' });
       await loadTenants();
     } catch (e: any) { 
-      alert(e.message); 
+      console.error("❌ Erro detalhado na criação:", e);
+      alert("Erro ao criar: " + (e.message || "Verifique o console para detalhes")); 
     } finally {
       setLoadingData(false);
     }
