@@ -46,18 +46,23 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
         return null;
       }
 
+      // Lógica de Promoção Automática para o Proprietário/Admin Principal
+      const ADMIN_EMAIL = 'frotaproapp@gmail.com'; // Altere para o e-mail real do proprietário
+      
       if (!memberData) {
         console.warn("Usuário não encontrado na tabela 'members'. Tentando auto-criação...");
         
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return null;
 
+        const isSystemOwner = session.user.email === ADMIN_EMAIL;
+
         // Tenta criar o registro do membro automaticamente
         const newMember = {
           id: userId,
           email: session.user.email,
-          name: session.user.user_metadata?.name || 'Novo Usuário',
-          role: UserRole.PADRAO,
+          name: session.user.user_metadata?.name || (isSystemOwner ? 'Administrador Sistema' : 'Novo Usuário'),
+          role: isSystemOwner ? UserRole.SUPER_ADMIN : UserRole.PADRAO,
           active: true,
           organization_id: session.user.user_metadata?.organization_id || null
         };
@@ -70,12 +75,11 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
 
         if (createError) {
           console.error("Erro ao auto-criar membro:", createError.message);
-          // Fallback para perfil temporário se falhar (ex: falta de organization_id)
           return {
             id: userId,
             email: session.user.email || '',
-            role: UserRole.PADRAO,
-            name: session.user.user_metadata?.name || 'Novo Usuário',
+            role: isSystemOwner ? UserRole.SUPER_ADMIN : UserRole.PADRAO,
+            name: session.user.user_metadata?.name || (isSystemOwner ? 'Administrador Sistema' : 'Novo Usuário'),
             organization_id: '',
             tenantId: '',
             secretariaId: null,
@@ -93,6 +97,16 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
           secretariaId: createdData.secretaria_id,
           license_status: 'ACTIVE' as LicenseStatus
         };
+      }
+
+      // Se o membro existe mas o e-mail é do admin e o papel não é SUPER_ADMIN, forçamos a atualização
+      if (memberData.email === ADMIN_EMAIL && memberData.role !== UserRole.SUPER_ADMIN) {
+        console.info("Promovendo usuário proprietário para SUPER_ADMIN...");
+        await supabase
+          .from('members')
+          .update({ role: UserRole.SUPER_ADMIN })
+          .eq('id', userId);
+        memberData.role = UserRole.SUPER_ADMIN;
       }
 
       // Busca a organização separadamente
