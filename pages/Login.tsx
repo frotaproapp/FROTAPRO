@@ -40,7 +40,7 @@ export const Login = () => {
                 <Logo className="w-full h-full" showText={false} />
             </div>
             <h2 className="text-3xl font-black tracking-tighter uppercase text-brand-900">
-              FROTAPRO <span className="text-brand-500">GOV</span>
+              FROTAPRO
             </h2>
             <p className="text-gray-400 text-[10px] font-bold tracking-widest uppercase mt-1">
               Gestão de Frota Institucional

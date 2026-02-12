@@ -23,7 +23,11 @@ export const OrgUsers = () => {
         id: '',
         linkedProfessionalId: '',
         secretariaId: '',
-        ativo: true
+        ativo: true,
+        cpf: '',
+        habilitacao: '',
+        coren: '',
+        crm: ''
     });
 
     const isFullAdmin = currentUser?.role === UserRole.ADMIN_TENANT || 
@@ -68,7 +72,7 @@ export const OrgUsers = () => {
 
         setIsSaving(true);
         try {
-            const { nome, email, role, secretariaId, senhaInicial, id, linkedProfessionalId, ativo } = formData;
+            const { nome, email, role, secretariaId, senhaInicial, id, linkedProfessionalId, ativo, cpf, habilitacao, coren, crm } = formData;
             const finalSecretariaId = isSecretariaAdmin ? currentUser.secretariaId : secretariaId;
 
             if ((role === UserRole.ADMIN_SECRETARIA || isSecretariaAdmin) && !finalSecretariaId) {
@@ -81,7 +85,11 @@ export const OrgUsers = () => {
                 role,
                 organization_id: tenantId,
                 secretaria_id: finalSecretariaId || null,
-                active: ativo
+                active: ativo,
+                cpf: cpf.replace(/\D/g, ''), // Remove formatação para salvar apenas números
+                habilitacao,
+                coren,
+                crm
             };
 
             let result: any = null;
@@ -128,7 +136,11 @@ export const OrgUsers = () => {
             role: u?.role || UserRole.PADRAO,
             linkedProfessionalId: linkedPro?.id || '',
             secretariaId: u?.secretaria_id || (isSecretariaAdmin ? currentUser?.secretariaId || '' : ''),
-            ativo: u?.active !== false
+            ativo: u?.active !== false,
+            cpf: u?.cpf || '',
+            habilitacao: u?.habilitacao || '',
+            coren: u?.coren || '',
+            crm: u?.crm || ''
         });
         setShowModal(true);
     };
@@ -245,6 +257,73 @@ export const OrgUsers = () => {
                                         ))}
                                     </select>
                                     <p className="text-[9px] text-gray-500 mt-1">⚠️ Vincule um motorista para permitir acesso ao app mobile e iniciar viagens</p>
+                                </div>
+                            )}
+
+                            {formData.role === UserRole.MOTORISTA && (
+                                <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 space-y-4">
+                                    <h4 className="text-[10px] font-black text-blue-800 uppercase flex items-center tracking-widest"><UserCheck size={14} className="mr-2"/> Documentação Profissional</h4>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black text-gray-600 uppercase mb-1.5 ml-1">CPF *</label>
+                                            <input 
+                                                className="w-full border p-3.5 rounded-xl text-sm font-mono bg-white text-black uppercase" 
+                                                value={formData.cpf} 
+                                                onChange={(e) => setFormData({ ...formData, cpf: e.target.value.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') })} 
+                                                placeholder="000.000.000-00"
+                                                maxLength={14}
+                                                required 
+                                            />
+                                        </div>
+
+                                        {(() => {
+                                            const selectedProfessional = professionals.find(p => p.id === formData.linkedProfessionalId);
+                                            const professionalType = selectedProfessional?.type;
+                                            
+                                            if (professionalType === ProfessionalType.TECNICO) {
+                                                return (
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-gray-600 uppercase mb-1.5 ml-1">Número da Habilitação *</label>
+                                                        <input 
+                                                            className="w-full border p-3.5 rounded-xl text-sm font-mono bg-white text-black uppercase" 
+                                                            value={formData.habilitacao} 
+                                                            onChange={(e) => setFormData({ ...formData, habilitacao: e.target.value })} 
+                                                            placeholder="Número da habilitação"
+                                                            required 
+                                                        />
+                                                    </div>
+                                                );
+                                            } else if (professionalType === ProfessionalType.ENFERMEIRO) {
+                                                return (
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-gray-600 uppercase mb-1.5 ml-1">COREN *</label>
+                                                        <input 
+                                                            className="w-full border p-3.5 rounded-xl text-sm font-mono bg-white text-black uppercase" 
+                                                            value={formData.coren} 
+                                                            onChange={(e) => setFormData({ ...formData, coren: e.target.value })} 
+                                                            placeholder="Número do COREN"
+                                                            required 
+                                                        />
+                                                    </div>
+                                                );
+                                            } else if (professionalType === ProfessionalType.MEDICO) {
+                                                return (
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-gray-600 uppercase mb-1.5 ml-1">CRM *</label>
+                                                        <input 
+                                                            className="w-full border p-3.5 rounded-xl text-sm font-mono bg-white text-black uppercase" 
+                                                            value={formData.crm} 
+                                                            onChange={(e) => setFormData({ ...formData, crm: e.target.value })} 
+                                                            placeholder="Número do CRM"
+                                                            required 
+                                                        />
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
+                                    </div>
                                 </div>
                             )}
 

@@ -26,6 +26,10 @@ CREATE TABLE members (
   email TEXT UNIQUE NOT NULL,
   role TEXT NOT NULL DEFAULT 'PADRAO',
   active BOOLEAN DEFAULT true,
+  cpf TEXT, -- CPF do usuário
+  habilitacao TEXT, -- Número da habilitação (técnico de enfermagem)
+  coren TEXT, -- Número do COREN (enfermeiro)
+  crm TEXT, -- Número do CRM (médico)
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

@@ -169,9 +169,21 @@ export const api = {
         document_number: p.documentNumber 
       };
 
+      // Mapeamento correto dos campos para o banco de dados
+      if (p.userId !== undefined) {
+        payload.user_id = p.userId;
+        delete payload.userId;
+      }
+      if (p.secretariaId !== undefined) {
+        payload.secretaria_id = p.secretariaId;
+        delete payload.secretariaId;
+      }
+
       // Limpeza para o banco
       delete payload.documentNumber;
 
+      console.log('🚗 API professionals.save - Payload final:', payload);
+      
       const { data, error } = await supabase
         .from('professionals')
         .upsert([payload], { onConflict: 'id' })
@@ -179,6 +191,12 @@ export const api = {
         
       if (error) {
         console.error("❌ Erro ao salvar profissional:", error);
+        console.error("❌ Detalhes do erro:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
       return data;
