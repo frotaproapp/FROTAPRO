@@ -49,7 +49,7 @@ export const Layout = () => {
         const settings = await api.settings.get();
         if (settings.municipalityName) setMunicipalityName(settings.municipalityName);
         if (settings.logoBase64) setLogoBase64(settings.logoBase64);
-        const perms = await api.license.getPermissions();
+        const perms = await api.admin.license.getPermissions();
         setLicenseStatus(perms.status);
       } catch (e) {}
     }
@@ -92,7 +92,7 @@ export const Layout = () => {
       {isSidebarOpen && <div className="fixed inset-0 bg-gray-900/60 z-40 lg:hidden" onClick={() => setIsSidebarOpen(false)} />}
 
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 lg:translate-x-0 lg:static bg-[#1C68E4] text-white flex flex-col shadow-xl",
+        "fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 lg:translate-x-0 lg:static bg-[#2B3EF1] text-white flex flex-col shadow-xl",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col items-center justify-center pt-8 pb-6 px-4 border-b border-white/10">
@@ -110,11 +110,11 @@ export const Layout = () => {
               to={item.to}
               className={({ isActive }) => cn(
                 "group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-white text-black mb-2 transition-all shadow-sm",
-                isActive ? "ring-2 ring-white ring-offset-2 ring-offset-[#1C68E4] font-bold" : "opacity-90 hover:opacity-100" 
+                isActive ? "ring-2 ring-white ring-offset-2 ring-offset-[#2B3EF1] font-bold" : "opacity-90 hover:opacity-100" 
               )}
               onClick={() => setIsSidebarOpen(false)}
             >
-              <item.icon className="mr-3 h-5 w-5 text-[#1C68E4]" />
+              <item.icon className="mr-3 h-5 w-5 text-[#2B3EF1]" />
               <span className="flex-1">{item.label}</span>
             </NavLink>
           ))}
