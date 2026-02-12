@@ -45,6 +45,9 @@ const ProtectedRoute = ({ children, roles }: { children?: React.ReactNode, roles
   }
 
   if (!user) {
+    if (location.pathname === '/login' || location.pathname === '/driver') {
+      return <>{children}</>;
+    }
     if (location.pathname.startsWith('/driver')) return <Navigate to="/driver" replace />;
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -53,13 +56,15 @@ const ProtectedRoute = ({ children, roles }: { children?: React.ReactNode, roles
       const userRole = normalizeRole(user.role);
       
       if (userRole === UserRole.MOTORISTA && !roles.includes(UserRole.MOTORISTA)) {
+          if (location.pathname === '/driver/home') return <>{children}</>;
           return <Navigate to="/driver/home" replace />;
       }
 
       const hasPermission = roles.some(role => hasRole(role) || userRole === role);
       
       if (!hasPermission) {
-           return <Navigate to="/login" replace />; 
+           // Em vez de redirecionar para login (que causaria loop se já logado), redireciona para a home correta
+           return <Navigate to="/" replace />; 
       }
   }
 

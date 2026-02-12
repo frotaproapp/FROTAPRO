@@ -32,31 +32,47 @@ export const api = {
   vehicles: {
     list: async () => {
       const { data, error } = await supabase.from('vehicles').select('*').order('plate');
+      if (error) console.error("❌ Erro ao listar veículos:", error);
       return (data || []) as Vehicle[];
     },
     save: async (v: Partial<Vehicle>) => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: member } = await supabase.from('members').select('organization_id').eq('id', user?.id).single();
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const { data: member } = await supabase.from('members').select('organization_id').eq('id', user.id).single();
+      const orgId = member?.organization_id;
+      if (!orgId) throw new Error("Organização não encontrada para o usuário");
       
       const payload = { 
         ...v, 
-        organization_id: member?.organization_id,
+        organization_id: orgId,
         current_km: v.currentKm,
         ambulance_type: v.ambulanceType,
         has_oxygen: v.hasOxygen
       };
       
-      if (v.id) {
-        await supabase.from('vehicles').update(payload).eq('id', v.id);
-      } else {
-        await supabase.from('vehicles').insert([payload]);
+      // Remove campos que não devem ser enviados na criação/update
+      delete (payload as any).currentKm;
+      delete (payload as any).ambulanceType;
+      delete (payload as any).hasOxygen;
+
+      const { data, error } = await supabase
+        .from('vehicles')
+        .upsert([payload], { onConflict: 'id' })
+        .select();
+        
+      if (error) {
+        console.error("❌ Erro ao salvar veículo (UPSERT):", error);
+        throw error;
       }
+      return data;
     }
   },
 
   trips: {
     list: async () => {
-      const { data } = await supabase.from('trips').select('*, professionals(name), vehicles(plate, model)').order('date_out', { ascending: false });
+      const { data, error } = await supabase.from('trips').select('*, professionals(name), vehicles(plate, model)').order('date_out', { ascending: false });
+      if (error) console.error("❌ Erro ao listar viagens:", error);
       return (data || []).map(t => ({
         ...t,
         driverName: t.professionals?.name,
@@ -72,11 +88,33 @@ export const api = {
       return (data || []) as Trip[];
     },
     create: async (t: any) => {
-      await supabase.from('trips').insert([t]);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const { data: member } = await supabase.from('members').select('organization_id').eq('id', user.id).single();
+      const orgId = member?.organization_id;
+
+      const payload = { 
+        ...t, 
+        organization_id: orgId,
+        created_by: user.id 
+      };
+
+      const { data, error } = await supabase.from('trips').insert([payload]).select();
+      if (error) {
+        console.error("❌ Erro ao criar viagem:", error);
+        throw error;
+      }
+      return data;
     },
     update: async (t: any) => {
       const { id, ...updateData } = t;
-      await supabase.from('trips').update(updateData).eq('id', id);
+      const { data, error } = await supabase.from('trips').update(updateData).eq('id', id).select();
+      if (error) {
+        console.error("❌ Erro ao atualizar viagem:", error);
+        throw error;
+      }
+      return data;
     }
   },
 
@@ -86,8 +124,27 @@ export const api = {
       return (data || []) as Professional[];
     },
     save: async (p: any) => {
-      if (p.id) await supabase.from('professionals').update(p).eq('id', p.id);
-      else await supabase.from('professionals').insert([p]);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const { data: member } = await supabase.from('members').select('organization_id').eq('id', user.id).single();
+      const orgId = member?.organization_id;
+
+      const payload = { 
+        ...p, 
+        organization_id: orgId 
+      };
+
+      const { data, error } = await supabase
+        .from('professionals')
+        .upsert([payload], { onConflict: 'id' })
+        .select();
+
+      if (error) {
+        console.error("❌ Erro ao salvar profissional:", error);
+        throw error;
+      }
+      return data;
     },
     delete: async (id: string) => {
       await supabase.from('professionals').delete().eq('id', id);
@@ -107,20 +164,28 @@ export const api = {
       return data || [];
     },
     add: async (name: string, responsible: string, secretariaId?: string) => {
-      await supabase.from('solicitantes').insert([{ name, responsible, secretaria_id: secretariaId }]);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: member } = await supabase.from('members').select('organization_id').eq('id', user?.id).single();
+      
+      const payload = { 
+        name, 
+        responsible, 
+        secretaria_id: secretariaId,
+        organization_id: member?.organization_id 
+      };
+      
+      const { data, error } = await supabase.from('solicitantes').insert([payload]).select();
+      if (error) {
+        console.error("❌ Erro ao adicionar solicitante:", error);
+        throw error;
+      }
+      return data;
     },
     delete: async (id: string) => {
       await supabase.from('solicitantes').delete().eq('id', id);
     }
   },
 
-  license: {
-    getPermissions: async () => {
-      return { status: LicenseStatus.ACTIVE };
-    }
-  },
-  
-  alerts: { list: async () => [] },
   healthPlans: { 
     list: async () => {
       const { data, error } = await supabase.from('health_plans').select('*');
@@ -128,17 +193,34 @@ export const api = {
       return data || [];
     },
     add: async (name: string) => {
-      const { error } = await supabase.from('health_plans').insert([{ name }]);
-      if (error) console.error("❌ Erro ao adicionar plano de saúde:", error);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: member } = await supabase.from('members').select('organization_id').eq('id', user?.id).single();
+      
+      const payload = { 
+        name, 
+        organization_id: member?.organization_id 
+      };
+      
+      const { error } = await supabase.from('health_plans').insert([payload]);
+      if (error) {
+        console.error("❌ Erro ao adicionar plano de saúde:", error);
+        throw error;
+      }
     },
     update: async (plan: any) => {
       const { id, ...updateData } = plan;
       const { error } = await supabase.from('health_plans').update(updateData).eq('id', id);
-      if (error) console.error("❌ Erro ao atualizar plano de saúde:", error);
+      if (error) {
+        console.error("❌ Erro ao atualizar plano de saúde:", error);
+        throw error;
+      }
     },
     delete: async (id: string) => {
       const { error } = await supabase.from('health_plans').delete().eq('id', id);
-      if (error) console.error("❌ Erro ao deletar plano de saúde:", error);
+      if (error) {
+        console.error("❌ Erro ao deletar plano de saúde:", error);
+        throw error;
+      }
     }
   },
   dr: {

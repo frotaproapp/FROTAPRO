@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
       }
 
       // Lógica de Promoção Automática para o Proprietário/Admin Principal
-      const ADMIN_EMAIL = 'frotaproapp@gmail.com'; // Altere para o e-mail real do proprietário
+      const ADMIN_EMAIL = 'frotaproapp@gmail.com'; 
       
       if (!memberData) {
         console.warn("Usuário não encontrado na tabela 'members'. Tentando auto-criação...");
@@ -55,16 +55,26 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return null;
 
-        const isSystemOwner = session.user.email === ADMIN_EMAIL;
+        const userEmail = session.user.email?.toLowerCase();
+        const isSystemOwner = userEmail === ADMIN_EMAIL;
+
+        // VERIFICAÇÃO DE ADMIN_TENANT: Busca se este e-mail é o admin de alguma organização
+        const { data: orgAdminData } = await supabase
+          .from('organizations')
+          .select('id')
+          .eq('email', userEmail)
+          .maybeSingle();
+
+        const isTenantAdmin = !!orgAdminData;
 
         // Tenta criar o registro do membro automaticamente
         const newMember = {
           id: userId,
-          email: session.user.email,
-          name: session.user.user_metadata?.name || (isSystemOwner ? 'Administrador Sistema' : 'Novo Usuário'),
-          role: isSystemOwner ? UserRole.SUPER_ADMIN : UserRole.PADRAO,
+          email: userEmail,
+          name: session.user.user_metadata?.name || (isSystemOwner ? 'Administrador Sistema' : (isTenantAdmin ? 'Administrador Prefeitura' : 'Novo Usuário')),
+          role: isSystemOwner ? UserRole.SUPER_ADMIN : (isTenantAdmin ? UserRole.ADMIN_TENANT : UserRole.PADRAO),
           active: true,
-          organization_id: session.user.user_metadata?.organization_id || null
+          organization_id: orgAdminData?.id || session.user.user_metadata?.organization_id || null
         };
 
         const { data: createdData, error: createError } = await supabase
@@ -77,11 +87,11 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
           console.error("Erro ao auto-criar membro:", createError.message);
           return {
             id: userId,
-            email: session.user.email || '',
-            role: isSystemOwner ? UserRole.SUPER_ADMIN : UserRole.PADRAO,
-            name: session.user.user_metadata?.name || (isSystemOwner ? 'Administrador Sistema' : 'Novo Usuário'),
-            organization_id: '',
-            tenantId: '',
+            email: userEmail || '',
+            role: isSystemOwner ? UserRole.SUPER_ADMIN : (isTenantAdmin ? UserRole.ADMIN_TENANT : UserRole.PADRAO),
+            name: session.user.user_metadata?.name || (isSystemOwner ? 'Administrador Sistema' : (isTenantAdmin ? 'Administrador Prefeitura' : 'Novo Usuário')),
+            organization_id: orgAdminData?.id || '',
+            tenantId: orgAdminData?.id || '',
             secretariaId: null,
             license_status: 'ACTIVE' as LicenseStatus
           };
@@ -100,13 +110,34 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
       }
 
       // Se o membro existe mas o e-mail é do admin e o papel não é SUPER_ADMIN, forçamos a atualização
-      if (memberData.email === ADMIN_EMAIL && memberData.role !== UserRole.SUPER_ADMIN) {
+      if (memberData.email.toLowerCase() === ADMIN_EMAIL && memberData.role !== UserRole.SUPER_ADMIN) {
         console.info("Promovendo usuário proprietário para SUPER_ADMIN...");
         await supabase
           .from('members')
           .update({ role: UserRole.SUPER_ADMIN })
           .eq('id', userId);
         memberData.role = UserRole.SUPER_ADMIN;
+      }
+
+      // VERIFICAÇÃO DE ADMIN_TENANT PARA MEMBRO EXISTENTE: 
+      // Se ele for o e-mail da org mas não tiver o papel correto, promove
+      const { data: currentOrg } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('email', memberData.email.toLowerCase())
+        .maybeSingle();
+
+      if (currentOrg && memberData.role !== UserRole.ADMIN_TENANT && memberData.role !== UserRole.SUPER_ADMIN) {
+        console.info("Promovendo e-mail da organização para ADMIN_TENANT...");
+        await supabase
+          .from('members')
+          .update({ 
+            role: UserRole.ADMIN_TENANT,
+            organization_id: currentOrg.id 
+          })
+          .eq('id', userId);
+        memberData.role = UserRole.ADMIN_TENANT;
+        memberData.organization_id = currentOrg.id;
       }
 
       // Busca a organização separadamente se houver um organization_id válido

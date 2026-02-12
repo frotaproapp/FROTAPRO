@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS solicitantes (
 );
 
 -- 9. TABELA DE AUDITORIA (LOGS)
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
   user_id UUID REFERENCES auth.users(id),
@@ -148,47 +148,35 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE health_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dr_simulations ENABLE ROW LEVEL SECURITY;
 
--- POLÍTICAS PARA ORGANIZATIONS
-CREATE POLICY "Permitir leitura de organizações" ON organizations
-  FOR SELECT USING (true);
+-- 13. POLÍTICAS DE ACESSO
+-- Organizações
+CREATE POLICY "Permitir leitura de organizações" ON organizations FOR SELECT USING (true);
+CREATE POLICY "Super Admins podem criar organizações" ON organizations FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM members WHERE members.id = auth.uid() AND members.role = 'SUPER_ADMIN')
+    OR (SELECT count(*) FROM organizations) = 0
+);
 
-CREATE POLICY "Super Admins podem criar organizações" ON organizations
-  FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM members 
-      WHERE members.id = auth.uid() 
-      AND members.role = 'SUPER_ADMIN'
-    )
-    OR 
-    (SELECT count(*) FROM organizations) = 0 -- Permite criar a primeira org
-  );
+-- Membros
+CREATE POLICY "Usuários veem seu próprio perfil" ON members FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Usuários podem criar seu próprio perfil" ON members FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Usuários podem atualizar seu próprio perfil" ON members FOR UPDATE USING (auth.uid() = id);
 
--- POLÍTICAS PARA MEMBERS (Evitando recursão)
-CREATE POLICY "Usuários veem seu próprio perfil" ON members
-  FOR SELECT USING (auth.uid() = id);
-
-CREATE POLICY "Usuários podem criar seu próprio perfil" ON members
-  FOR INSERT WITH CHECK (auth.uid() = id);
-
-CREATE POLICY "Usuários podem atualizar seu próprio perfil" ON members
-  FOR UPDATE USING (auth.uid() = id);
-
--- POLÍTICAS SIMPLIFICADAS PARA EVITAR RECURSÃO (Usando metadados ou tabelas auxiliares se necessário, mas por ora simplificando para permitir acesso)
-CREATE POLICY "Acesso por organização" ON secretarias FOR ALL USING (true);
+-- Políticas Simplificadas (Acesso por Organização)
+CREATE POLICY "Acesso por organização secretarias" ON secretarias FOR ALL USING (true);
 CREATE POLICY "Acesso por organização veículos" ON vehicles FOR ALL USING (true);
 CREATE POLICY "Acesso por organização viagens" ON trips FOR ALL USING (true);
 CREATE POLICY "Acesso por organização profissionais" ON professionals FOR ALL USING (true);
 CREATE POLICY "Acesso por organização solicitantes" ON solicitantes FOR ALL USING (true);
-CREATE POLICY "Acesso por organização membros" ON members FOR SELECT USING (true);
+CREATE POLICY "Acesso por organização membros global" ON members FOR SELECT USING (true);
 CREATE POLICY "Acesso por organização planos de saúde" ON health_plans FOR ALL USING (true);
 CREATE POLICY "Acesso por organização simulações DR" ON dr_simulations FOR ALL USING (true);
+CREATE POLICY "Acesso por organização auditoria" ON audit_logs FOR ALL USING (true);
 
--- 13. PERMISSÕES DE ACESSO (GRANT) - CORREÇÃO PARA ERRO 403
+-- 14. PERMISSÕES DE ACESSO (GRANT)
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, authenticated, anon, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, authenticated, anon, service_role;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, authenticated, anon, service_role;
 
--- Garante que novos objetos também tenham permissões
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, authenticated, anon, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, authenticated, anon, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, authenticated, anon, service_role;
