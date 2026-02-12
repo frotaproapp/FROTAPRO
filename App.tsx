@@ -32,13 +32,32 @@ const ProtectedRoute = ({ children, roles }: { children?: React.ReactNode, roles
 
   if (loading || !userReady) {
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-            <div className="animate-pulse flex flex-col items-center">
-                <div className="h-16 w-16 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg mb-4">
-                    <ShieldCheck className="h-10 w-10 text-white" />
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
+                <div className="animate-pulse flex flex-col items-center text-center">
+                    <div className="h-20 w-20 bg-brand-600 rounded-2xl flex items-center justify-center shadow-lg mb-6">
+                        <ShieldCheck className="h-12 w-12 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-black text-gray-800 uppercase tracking-widest mb-2">FROTAPRO GOV</h2>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                        <div className="bg-brand-600 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2">Verificando autenticação...</p>
+                    <p className="text-xs text-gray-400">Carregando estrutura Supabase</p>
+                    
+                    {/* Timeout warning após 10 segundos */}
+                    <div className="mt-6 text-center">
+                        <p className="text-xs text-amber-600">
+                            Se demorar mais de 15 segundos, 
+                            <button 
+                                onClick={() => window.location.reload()} 
+                                className="text-brand-600 hover:text-brand-700 font-semibold ml-1 underline"
+                            >
+                                recarregue a página
+                            </button>
+                        </p>
+                    </div>
                 </div>
-                <h2 className="text-xl font-bold text-gray-800 uppercase tracking-widest">FROTAPRO GOV</h2>
-                <p className="text-sm text-gray-500 mt-1">Carregando infraestrutura Supabase...</p>
             </div>
         </div>
     );

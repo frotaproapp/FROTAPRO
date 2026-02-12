@@ -31,84 +31,36 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [userReady, setUserReady] = useState(false);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string): Promise<AppUser | null> => {
     try {
+      // Timeout para evitar requests infinitos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
+
       // Busca o membro primeiro
-      const { data: memberData, error: memberError, status } = await supabase
+      const { data: memberData, error: memberError } = await supabase
         .from('members')
         .select('*')
         .eq('id', userId)
         .order('created_at', { ascending: false })
         .maybeSingle();
 
+      clearTimeout(timeoutId);
+
       if (memberError) {
         console.error("Erro ao buscar membro:", memberError.message);
+        return null;
+      }
+
+      // Se não encontrou membro, retorna null em vez de tentar criar
+      if (!memberData) {
+        console.warn("Usuário não encontrado na tabela 'members'");
         return null;
       }
 
       // Lógica de Promoção Automática para o Proprietário/Admin Principal
       const ADMIN_EMAIL = 'frotaproapp@gmail.com'; 
       
-      if (!memberData) {
-        console.warn("Usuário não encontrado na tabela 'members'. Tentando auto-criação...");
-        
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return null;
-
-        const userEmail = session.user.email?.toLowerCase();
-        const isSystemOwner = userEmail === ADMIN_EMAIL;
-
-        // VERIFICAÇÃO DE ADMIN_TENANT: Busca se este e-mail é o admin de alguma organização
-        const { data: orgAdminData } = await supabase
-          .from('organizations')
-          .select('id')
-          .eq('email', userEmail)
-          .maybeSingle();
-
-        const isTenantAdmin = !!orgAdminData;
-
-        // Tenta criar o registro do membro automaticamente
-        const newMember = {
-          id: userId,
-          email: userEmail,
-          name: session.user.user_metadata?.name || (isSystemOwner ? 'Administrador Sistema' : (isTenantAdmin ? 'Administrador Prefeitura' : 'Novo Usuário')),
-          role: isSystemOwner ? UserRole.SUPER_ADMIN : (isTenantAdmin ? UserRole.ADMIN_TENANT : UserRole.PADRAO),
-          active: true,
-          organization_id: orgAdminData?.id || session.user.user_metadata?.organization_id || null
-        };
-
-        const { data: createdData, error: createError } = await supabase
-          .from('members')
-          .insert([newMember])
-          .select()
-          .maybeSingle();
-
-        if (createError) {
-          console.error("Erro ao auto-criar membro:", createError.message);
-          return {
-            id: userId,
-            email: userEmail || '',
-            role: isSystemOwner ? UserRole.SUPER_ADMIN : (isTenantAdmin ? UserRole.ADMIN_TENANT : UserRole.PADRAO),
-            name: session.user.user_metadata?.name || (isSystemOwner ? 'Administrador Sistema' : (isTenantAdmin ? 'Administrador Prefeitura' : 'Novo Usuário')),
-            organization_id: orgAdminData?.id || '',
-            tenantId: orgAdminData?.id || '',
-            secretariaId: null,
-            license_status: 'ACTIVE' as LicenseStatus
-          };
-        }
-
-        return {
-          id: createdData.id,
-          email: createdData.email,
-          role: createdData.role as UserRole,
-          name: createdData.name,
-          organization_id: createdData.organization_id,
-          tenantId: createdData.organization_id,
-          secretariaId: createdData.secretaria_id,
-          license_status: 'ACTIVE' as LicenseStatus
-        };
-      }
-
       // Se o membro existe mas o e-mail é do admin e o papel não é SUPER_ADMIN, forçamos a atualização
       if (memberData.email.toLowerCase() === ADMIN_EMAIL && memberData.role !== UserRole.SUPER_ADMIN) {
         console.info("Promovendo usuário proprietário para SUPER_ADMIN...");
@@ -143,16 +95,18 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
       // Busca a organização separadamente se houver um organization_id válido
       let orgData = null;
       if (memberData.organization_id && memberData.organization_id !== 'null' && memberData.organization_id !== '') {
-        const { data, error: orgError } = await supabase
-          .from('organizations')
-          .select('license_type, active')
-          .eq('id', memberData.organization_id)
-          .maybeSingle();
-        
-        if (orgError) {
-          console.error("Erro ao buscar organização:", orgError.message);
-        } else {
-          orgData = data;
+        try {
+          const { data, error: orgError } = await supabase
+            .from('organizations')
+            .select('license_type, active')
+            .eq('id', memberData.organization_id)
+            .maybeSingle();
+          
+          if (!orgError) {
+            orgData = data;
+          }
+        } catch (orgError) {
+          console.warn("Erro ao buscar organização, continuando sem dados da org:", orgError);
         }
       }
 
@@ -168,35 +122,94 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
       };
     } catch (err) {
       console.error("Exceção ao buscar perfil:", err);
+      // Retorna null em vez de tentar criar automaticamente para evitar loops
       return null;
     }
   };
 
   useEffect(() => {
+    let mounted = true;
+    let timeoutId: NodeJS.Timeout;
+
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const profile = await fetchProfile(session.user.id);
-        setUser(profile);
+      try {
+        // Timeout de segurança para evitar loading infinito
+        timeoutId = setTimeout(() => {
+          if (mounted) {
+            console.warn('Timeout de inicialização de auth excedido - forçando resolução');
+            setLoading(false);
+            setUserReady(true);
+            setUser(null);
+          }
+        }, 15000); // 15 segundos timeout
+
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Erro ao obter sessão:', sessionError);
+          if (mounted) {
+            setLoading(false);
+            setUserReady(true);
+            setUser(null);
+          }
+          return;
+        }
+
+        if (session?.user) {
+          console.log('Sessão encontrada, buscando perfil...');
+          const profile = await fetchProfile(session.user.id);
+          
+          if (mounted) {
+            setUser(profile);
+            setLoading(false);
+            setUserReady(true);
+          }
+        } else {
+          console.log('Nenhuma sessão ativa encontrada');
+          if (mounted) {
+            setUser(null);
+            setLoading(false);
+            setUserReady(true);
+          }
+        }
+      } catch (error) {
+        console.error('Erro durante inicialização de auth:', error);
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+          setUserReady(true);
+        }
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
       }
-      setLoading(false);
-      setUserReady(true);
     };
 
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session ? 'session exists' : 'no session');
+      
       if (session?.user) {
         const profile = await fetchProfile(session.user.id);
-        setUser(profile);
+        if (mounted) {
+          setUser(profile);
+          setLoading(false);
+          setUserReady(true);
+        }
       } else {
-        setUser(null);
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+          setUserReady(true);
+        }
       }
-      setLoading(false);
-      setUserReady(true);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -206,10 +219,51 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    // Força limpeza completa do estado para evitar loops
-    window.location.href = '/#/login';
+    try {
+      console.log('Iniciando logout...');
+      
+      // Limpa estado local primeiro
+      setUser(null);
+      setLoading(true);
+      setUserReady(false);
+      
+      // Limpa cache localStorage/sessionStorage relacionado ao Supabase
+      if (typeof window !== 'undefined') {
+        try {
+          // Remove chaves relacionadas ao Supabase
+          const keysToRemove = Object.keys(localStorage).filter(key => 
+            key.startsWith('sb-') || key.includes('supabase')
+          );
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+          
+          // Limpa sessionStorage também
+          Object.keys(sessionStorage).forEach(key => {
+            if (key.startsWith('sb-') || key.includes('supabase')) {
+              sessionStorage.removeItem(key);
+            }
+          });
+        } catch (storageError) {
+          console.warn('Erro ao limpar storage:', storageError);
+        }
+      }
+      
+      // Faz logout no Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Erro no logout do Supabase:', error);
+      } else {
+        console.log('Logout do Supabase realizado com sucesso');
+      }
+      
+      // Força redirecionamento e reload para garantir limpeza completa
+      window.location.href = '/#/login';
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Erro durante logout:', error);
+      // Mesmo com erro, força redirecionamento
+      window.location.href = '/#/login';
+    }
   };
 
   const hasRole = (role: string) => {
