@@ -222,7 +222,21 @@ export const Viagens = () => {
                                           <div><label className={labelClass}>Nascimento *</label><input type="date" className={inputClass} value={editingTrip.patient?.birthDate} onChange={e => setEditingTrip({...editingTrip, patient: {...editingTrip.patient, birthDate: e.target.value}})} required disabled={viewOnly}/></div>
                                           <div><label className={labelClass}>Telefone</label><input className={inputClass} value={editingTrip.patient?.telefone} onChange={e => setEditingTrip({...editingTrip, patient: {...editingTrip.patient, telefone: e.target.value}})} disabled={viewOnly}/></div>
                                       </div>
-                                      <div><label className={labelClass}>Endereço</label><input className={inputClass} value={editingTrip.patient?.endereco} onChange={e => setEditingTrip({...editingTrip, patient: {...editingTrip.patient, endereco: e.target.value.toUpperCase()})} disabled={viewOnly}/></div>
+                                      <div>
+                                        <label className={labelClass}>Endereço</label>
+                                        <input 
+                                          className={inputClass} 
+                                          value={editingTrip.patient?.endereco} 
+                                          onChange={(e) => setEditingTrip({
+                                            ...editingTrip, 
+                                            patient: {
+                                              ...editingTrip.patient, 
+                                              endereco: e.target.value.toUpperCase()
+                                            }
+                                          })} 
+                                          disabled={viewOnly}
+                                        />
+                                      </div>
                                       
                                       {/* Acompanhante */}
                                       <div className="bg-gray-50 p-3 rounded-lg border border-dashed">
