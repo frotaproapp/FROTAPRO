@@ -105,8 +105,11 @@ export const OrgUsers = () => {
 
             setShowModal(false);
             loadData();
+            
+            // Show success message
+            alert('✅ Usuário criado com sucesso! O novo usuário pode fazer login com o email e senha informados.');
         } catch(e:any) {
-            alert(e.message);
+            alert(`❌ Erro ao criar usuário: ${e.message}`);
         } finally {
             setIsSaving(false);
         }

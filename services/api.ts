@@ -319,9 +319,25 @@ export const api = {
       return data || [];
     },
     createUser: async (tenantId: string, userData: any) => {
-      // Wraps user creation for organizational context
-      const { data } = await supabase.from('members').insert([{ ...userData, organization_id: tenantId }]);
-      return data;
+      // Call Vercel API route to create user properly
+      const response = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...userData,
+          organization_id: tenantId
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create user');
+      }
+
+      const result = await response.json();
+      return result;
     },
     updateUser: async (tenantId: string, userId: string, data: any) => {
       const { data: updated, error } = await supabase
