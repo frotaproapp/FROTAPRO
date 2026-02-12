@@ -208,6 +208,8 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    // Força limpeza completa do estado para evitar loops
+    window.location.href = '/#/login';
   };
 
   const hasRole = (role: string) => {
