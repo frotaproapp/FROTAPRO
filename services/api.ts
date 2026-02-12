@@ -387,19 +387,35 @@ export const api = {
       return result;
     },
     updateUser: async (tenantId: string, userId: string, data: any) => {
+      console.log('👤 API org.updateUser - Recebendo dados:', { tenantId, userId, data });
+      
+      const updateData = {
+        ...data,
+        organization_id: tenantId
+      };
+      
+      console.log('📤 API org.updateUser - Dados para update:', updateData);
+      
       const { data: updated, error } = await supabase
         .from('members')
-        .update({
-          ...data,
-          organization_id: tenantId
-        })
+        .update(updateData)
         .eq('id', userId)
         .select();
         
       if (error) {
         console.error("❌ Erro ao atualizar usuário:", error);
+        console.error("❌ Detalhes completos do erro:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          userId,
+          updateData
+        });
         throw error;
       }
+      
+      console.log('✅ Usuário atualizado com sucesso:', updated);
       return updated;
     },
     removeUser: async (tenantId: string, userId: string) => {
