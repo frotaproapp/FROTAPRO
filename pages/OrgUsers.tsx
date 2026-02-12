@@ -242,22 +242,31 @@ export const OrgUsers = () => {
                             </div>
 
                             {formData.role === UserRole.MOTORISTA && (
-                                <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-1.5 ml-1">Vincular Motorista (para acesso ao app mobile)</label>
-                                    <select
-                                        className="w-full border p-3.5 rounded-xl text-[11px] font-black uppercase bg-white text-black"
-                                        value={formData.linkedProfessionalId}
-                                        onChange={(e) => setFormData({...formData, linkedProfessionalId: e.target.value})}
-                                    >
-                                        <option value="">-- Selecione o Motorista --</option>
-                                        {professionals.map(pro => (
-                                            <option key={pro.id} value={pro.id}>
-                                                {pro.name} - {pro.documentNumber ? `CPF: ${pro.documentNumber}` : 'Sem documento'}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <p className="text-[9px] text-gray-500 mt-1">⚠️ Vincule um motorista para permitir acesso ao app mobile e iniciar viagens</p>
-                                </div>
+                                <>
+                                    <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
+                                        <div className={`w-3 h-3 rounded-full ${formData.linkedProfessionalId ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                        <span className={`text-sm font-black uppercase ${formData.linkedProfessionalId ? 'text-green-700' : 'text-red-700'}`}>
+                                            {formData.linkedProfessionalId ? '✅ Vinculado ao Usuário - Acesso Mobile Liberado' : '❌ Não Vinculado - Sem Acesso Mobile'}
+                                        </span>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1.5 ml-1">Vincular Motorista (para acesso ao app mobile)</label>
+                                        <select
+                                            className="w-full border p-3.5 rounded-xl text-[11px] font-black uppercase bg-white text-black"
+                                            value={formData.linkedProfessionalId}
+                                            onChange={(e) => setFormData({...formData, linkedProfessionalId: e.target.value})}
+                                        >
+                                            <option value="">-- Selecione o Motorista --</option>
+                                            {professionals.map(pro => (
+                                                <option key={pro.id} value={pro.id}>
+                                                    {pro.name} - {pro.documentNumber ? `CPF: ${pro.documentNumber}` : 'Sem documento'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <p className="text-[9px] text-gray-500 mt-1">⚠️ Vincule um motorista para permitir acesso ao app mobile e iniciar viagens</p>
+                                    </div>
+                                </>
                             )}
 
                             {formData.role === UserRole.MOTORISTA && (
