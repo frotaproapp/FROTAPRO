@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
 
       // Busca a organização separadamente se houver um organization_id válido
       let orgData = null;
-      if (memberData.organization_id) {
+      if (memberData.organization_id && memberData.organization_id !== 'null' && memberData.organization_id !== '') {
         const { data, error: orgError } = await supabase
           .from('organizations')
           .select('license_type, active')
@@ -130,8 +130,8 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
         email: memberData.email,
         role: memberData.role as UserRole,
         name: memberData.name,
-        organization_id: memberData.organization_id,
-        tenantId: memberData.organization_id,
+        organization_id: memberData.organization_id || '',
+        tenantId: memberData.organization_id || '',
         secretariaId: memberData.secretaria_id,
         license_status: (orgData?.active ? 'ACTIVE' : 'SUSPENDED') as LicenseStatus
       };

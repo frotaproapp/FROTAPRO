@@ -12,7 +12,7 @@ export const api = {
       if (!user) return {};
       
       const { data: member } = await supabase.from('members').select('organization_id').eq('id', user.id).single();
-      if (!member) return {};
+      if (!member || !member.organization_id) return {};
 
       const { data } = await supabase.from('organizations').select('settings, name').eq('id', member.organization_id).single();
       return { 
