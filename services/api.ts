@@ -263,7 +263,20 @@ export const api = {
       return data;
     },
     updateUser: async (tenantId: string, userId: string, data: any) => {
-      await supabase.from('members').update(data).eq('id', userId);
+      const { data: updated, error } = await supabase
+        .from('members')
+        .update({
+          ...data,
+          organization_id: tenantId
+        })
+        .eq('id', userId)
+        .select();
+        
+      if (error) {
+        console.error("❌ Erro ao atualizar usuário:", error);
+        throw error;
+      }
+      return updated;
     },
     removeUser: async (tenantId: string, userId: string) => {
       await supabase.from('members').delete().eq('id', userId);

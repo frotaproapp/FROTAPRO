@@ -157,6 +157,7 @@ export interface User {
   active: boolean;
   tenantId?: string;
   organization_id?: string;
+  secretaria_id?: string;
 }
 
 export interface Tenant {

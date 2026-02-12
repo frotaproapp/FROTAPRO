@@ -1,13 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { User, UserRole } from '../types';
+import { secretariasService } from '../services/secretariasService';
+import { User, UserRole, Secretaria } from '../types';
 import { Plus, Edit, Trash2, X, Check, RefreshCw } from 'lucide-react';
 import { useAuth } from '../services/authContext';
 
 export const Usuarios = () => {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [secretarias, setSecretarias] = useState<Secretaria[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<Partial<User>>({
       active: true,
@@ -21,9 +22,16 @@ export const Usuarios = () => {
   }, [currentUser?.organization_id]);
 
   const loadData = async () => {
+    const orgId = currentUser?.organization_id;
+    if (!orgId) return;
+    
     try {
-        const u = await api.users.list();
+        const [u, s] = await Promise.all([
+          api.users.list(),
+          secretariasService.listar(orgId)
+        ]);
         setUsers(u as User[]);
+        setSecretarias(s);
     } catch(e){console.error(e);}
     finally{setLoading(false);}
   };
@@ -40,19 +48,24 @@ export const Usuarios = () => {
     try {
         if(!editingUser.name || !editingUser.email) throw new Error("Dados obrigatórios faltando");
         
+        if (editingUser.role === UserRole.SUPER_ADMIN && currentUser?.role !== UserRole.SUPER_ADMIN) {
+            throw new Error("Você não tem permissão para criar usuários SUPER_ADMIN.");
+        }
+
+        const payload = {
+            name: editingUser.name,
+            role: editingUser.role,
+            active: editingUser.active,
+            secretaria_id: editingUser.secretaria_id || null
+        };
+
         if (editingUser.id) {
-            await api.org.updateUser(orgId, editingUser.id, { 
-                name: editingUser.name,
-                active: editingUser.active 
-            });
+            await api.org.updateUser(orgId, editingUser.id, payload);
         } else {
-            // No Supabase, o convite/criação é feito via Admin Auth API (Cloud Function)
-            // Para o frontend, apenas disparamos a criação do membro
             await api.org.createUser(orgId, { 
-                name: editingUser.name, 
+                ...payload,
                 email: editingUser.email,
-                role: editingUser.role,
-                active: editingUser.active !== false 
+                active: editingUser.active !== false
             });
         }
         setShowModal(false);
@@ -103,7 +116,7 @@ export const Usuarios = () => {
                     <tr>
                         <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Nome</th>
                         <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">E-mail</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Perfil</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Perfil / Secretaria</th>
                         <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
                         <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Gerenciar</th>
                     </tr>
@@ -114,7 +127,14 @@ export const Usuarios = () => {
                             <td className="px-6 py-4 font-black text-gray-900 uppercase text-sm">{u.name}</td>
                             <td className="px-6 py-4 text-sm text-gray-500">{u.email}</td>
                             <td className="px-6 py-4">
-                                <span className="bg-gray-100 text-gray-800 text-[10px] px-2 py-1 rounded border border-gray-200 font-black uppercase">{u.role}</span>
+                                <div className="flex flex-col gap-1">
+                                    <span className="bg-gray-100 text-gray-800 text-[10px] px-2 py-1 rounded border border-gray-200 font-black uppercase w-fit">{u.role}</span>
+                                    {u.secretaria_id && (
+                                        <span className="text-[9px] text-brand-600 font-bold uppercase">
+                                            {secretarias.find(s => s.id === u.secretaria_id)?.nome || 'Secretaria Vinculada'}
+                                        </span>
+                                    )}
+                                </div>
                             </td>
                             <td className="px-6 py-4">
                                 {u.active ? 
@@ -137,7 +157,7 @@ export const Usuarios = () => {
 
         {showModal && (
             <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                <div className="bg-white rounded-[2rem] w-full max-w-lg p-8 shadow-2xl animate-fadeIn border-t-[12px] border-brand-600">
+                <div className="bg-white rounded-[2rem] w-full max-w-lg p-8 shadow-2xl animate-fadeIn border-t-[12px] border-brand-600 max-h-[90vh] overflow-y-auto">
                     <div className="flex justify-between mb-8">
                         <div>
                             <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">{editingUser.id ? 'Editar' : 'Novo'} Usuário</h2>
@@ -160,11 +180,29 @@ export const Usuarios = () => {
                              <input className={inputClass} type="email" value={editingUser.email || ''} onChange={e => setEditingUser({...editingUser, email: e.target.value.toLowerCase()})} required disabled={!!editingUser.id} />
                         </div>
                         
-                        <div>
-                             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nível de Permissão</label>
-                             <select className={inputClass} value={editingUser.role} onChange={e => setEditingUser({...editingUser, role: e.target.value as UserRole})}>
-                                 {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
-                             </select>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nível de Permissão</label>
+                                <select className={inputClass} value={editingUser.role} onChange={e => setEditingUser({...editingUser, role: e.target.value as UserRole})}>
+                                    {Object.values(UserRole)
+                                        .filter(r => r !== UserRole.SUPER_ADMIN || currentUser?.role === UserRole.SUPER_ADMIN)
+                                        .map(r => <option key={r} value={r}>{r}</option>)
+                                    }
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Secretaria (Opcional)</label>
+                                <select 
+                                    className={inputClass} 
+                                    value={editingUser.secretaria_id || ''} 
+                                    onChange={e => setEditingUser({...editingUser, secretaria_id: e.target.value || undefined})}
+                                >
+                                    <option value="">GERAL / TODAS</option>
+                                    {secretarias.map((s: Secretaria) => (
+                                        <option key={s.id} value={s.id}>{s.nome}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
                         <div className="flex items-center space-x-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
