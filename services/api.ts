@@ -120,8 +120,12 @@ export const api = {
 
   professionals: {
     list: async () => {
-      const { data } = await supabase.from('professionals').select('*').order('name');
-      return (data || []) as Professional[];
+      const { data, error } = await supabase.from('professionals').select('*').order('name');
+      if (error) console.error("❌ Erro ao listar profissionais:", error);
+      return (data || []).map(p => ({
+        ...p,
+        documentNumber: p.document_number
+      })) as Professional[];
     },
     save: async (p: any) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -132,14 +136,18 @@ export const api = {
 
       const payload = { 
         ...p, 
-        organization_id: orgId 
+        organization_id: orgId,
+        document_number: p.documentNumber 
       };
+
+      // Limpeza para o banco
+      delete payload.documentNumber;
 
       const { data, error } = await supabase
         .from('professionals')
         .upsert([payload], { onConflict: 'id' })
         .select();
-
+        
       if (error) {
         console.error("❌ Erro ao salvar profissional:", error);
         throw error;
@@ -153,15 +161,60 @@ export const api = {
 
   users: {
     list: async () => {
-      const { data } = await supabase.from('members').select('*').order('name');
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error("❌ Erro ao listar usuários:", error.message);
+        return [];
+      }
       return data || [];
+    },
+    create: async (userData: any) => {
+      const { data, error } = await supabase
+        .from('members')
+        .insert([userData])
+        .select();
+      if (error) {
+        console.error("❌ Erro ao criar usuário:", error);
+        throw error;
+      }
+      return data;
+    },
+    update: async (id: string, userData: any) => {
+      const { data, error } = await supabase
+        .from('members')
+        .update(userData)
+        .eq('id', id)
+        .select();
+      if (error) {
+        console.error("❌ Erro ao atualizar usuário:", error);
+        throw error;
+      }
+      return data;
+    },
+    delete: async (id: string) => {
+      const { error } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', id);
+      if (error) {
+        console.error("❌ Erro ao deletar usuário:", error);
+        throw error;
+      }
     }
   },
 
   solicitors: {
     list: async () => {
-      const { data } = await supabase.from('solicitantes').select('*');
-      return data || [];
+      const { data, error } = await supabase.from('solicitantes').select('*').order('name');
+      if (error) {
+        console.error("❌ Erro ao listar solicitantes:", error);
+        return [];
+      }
+      return (data || []) as Solicitor[];
     },
     add: async (name: string, responsible: string, secretariaId?: string) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -183,6 +236,14 @@ export const api = {
     },
     delete: async (id: string) => {
       await supabase.from('solicitantes').delete().eq('id', id);
+    },
+    save: async (s: any) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: member } = await supabase.from('members').select('organization_id').eq('id', user?.id).single();
+      const payload = { ...s, organization_id: member?.organization_id };
+      const { data, error } = await supabase.from('solicitantes').upsert([payload]).select();
+      if (error) throw error;
+      return data;
     }
   },
 
@@ -288,8 +349,52 @@ export const api = {
       return (data || []) as Tenant[];
     },
     getAuditLogs: async () => {
-      const { data } = await supabase.from('audit_logs').select('*').order('timestamp', { ascending: false });
-      return (data || []) as any[];
+      const { data } = await supabase.from('audit_logs').select('*, members(name, role)').order('created_at', { ascending: false });
+      return (data || []).map((log: any) => ({
+        ...log,
+        userName: log.members?.name,
+        userRole: log.members?.role
+      })) as any[];
+    },
+    solicitors: {
+      list: async () => {
+        const { data, error } = await supabase.from('solicitantes').select('*').order('name');
+        if (error) {
+          console.error("❌ Erro ao listar solicitantes:", error);
+          return [];
+        }
+        return (data || []) as Solicitor[];
+      },
+      save: async (s: any) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: member } = await supabase.from('members').select('organization_id').eq('id', user?.id).single();
+        const payload = { ...s, organization_id: member?.organization_id };
+        const { data, error } = await supabase.from('solicitantes').upsert([payload]).select();
+        if (error) throw error;
+        return data;
+      }
+    },
+    license: {
+      getPermissions: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { status: LicenseStatus.INVALID };
+        
+        const { data: member } = await supabase.from('members').select('organization_id').eq('id', user.id).single();
+        if (!member?.organization_id) return { status: LicenseStatus.INVALID };
+
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('license_status, license_expires_at, active')
+          .eq('id', member.organization_id)
+          .single();
+
+        if (!org) return { status: LicenseStatus.INVALID };
+
+        return {
+          status: (org.active ? org.license_status : LicenseStatus.SUSPENDED) as LicenseStatus,
+          expiresAt: org.license_expires_at
+        };
+      }
     },
     renewLicense: async (tenantId: string, days: number) => {
       const expiresAt = new Date();

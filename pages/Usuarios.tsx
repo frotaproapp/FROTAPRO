@@ -60,11 +60,12 @@ export const Usuarios = () => {
         };
 
         if (editingUser.id) {
-            await api.org.updateUser(orgId, editingUser.id, payload);
+            await api.users.update(editingUser.id, payload);
         } else {
-            await api.org.createUser(orgId, { 
+            await api.users.create({ 
                 ...payload,
                 email: editingUser.email,
+                organization_id: orgId,
                 active: editingUser.active !== false
             });
         }
@@ -83,7 +84,7 @@ export const Usuarios = () => {
     if (!orgId) return;
 
     try { 
-        await api.org.removeUser(orgId, id); 
+        await api.users.delete(id); 
         loadData(); 
     } catch(e) {console.error(e);}
   };
