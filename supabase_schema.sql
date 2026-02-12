@@ -1,4 +1,3 @@
-
 -- 1. EXTENSÕES
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -12,6 +11,7 @@ CREATE TABLE organizations (
   address TEXT,
   active BOOLEAN DEFAULT true,
   license_type TEXT DEFAULT 'TRIAL',
+  license_status TEXT DEFAULT 'ACTIVE',
   license_expires_at TIMESTAMPTZ DEFAULT (now() + interval '30 days'),
   settings JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT now()

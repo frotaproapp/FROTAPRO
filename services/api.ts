@@ -199,11 +199,23 @@ export const api = {
     renewLicense: async (tenantId: string, days: number) => {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + days);
-      await supabase.from('organizations').update({ 
+      
+      const { data, error } = await supabase.from('organizations').update({ 
         license_expires_at: expiresAt.toISOString(),
         license_status: 'ACTIVE',
         active: true 
-      }).eq('id', tenantId);
+      }).eq('id', tenantId).select();
+
+      if (error) {
+        console.error("❌ ERRO AO RENOVAR LICENÇA:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+      return data;
     },
     deleteTenant: async (tenantId: string) => {
       await supabase.from('organizations').delete().eq('id', tenantId);
