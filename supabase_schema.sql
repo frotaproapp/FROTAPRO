@@ -159,3 +159,13 @@ CREATE POLICY "Acesso por organização viagens" ON trips FOR ALL USING (true);
 CREATE POLICY "Acesso por organização profissionais" ON professionals FOR ALL USING (true);
 CREATE POLICY "Acesso por organização solicitantes" ON solicitantes FOR ALL USING (true);
 CREATE POLICY "Acesso por organização membros" ON members FOR SELECT USING (true);
+
+-- 11. PERMISSÕES DE ACESSO (GRANT) - CORREÇÃO PARA ERRO 403
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, authenticated, anon, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, authenticated, anon, service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, authenticated, anon, service_role;
+
+-- Garante que novos objetos também tenham permissões
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, authenticated, anon, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, authenticated, anon, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, authenticated, anon, service_role;
