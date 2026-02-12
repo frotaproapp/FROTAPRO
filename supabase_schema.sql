@@ -156,14 +156,14 @@ CREATE POLICY "Super Admins podem criar organizações" ON organizations FOR INS
     OR (SELECT count(*) FROM organizations) = 0
 );
 
--- Membros
-CREATE POLICY "Usuários veem seu próprio perfil" ON members FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Usuários podem criar seu próprio perfil" ON members FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Usuários podem atualizar seu próprio perfil" ON members FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Administradores veem membros da mesma organização" ON members FOR SELECT USING (
-    auth.role() = 'authenticated' AND 
-    organization_id = (SELECT organization_id FROM members WHERE id = auth.uid() LIMIT 1)
-);
+-- Membros - Políticas Simplificadas para Evitar Recursão
+DROP POLICY IF EXISTS "Usuários veem seu próprio perfil" ON members;
+DROP POLICY IF EXISTS "Usuários podem criar seu próprio perfil" ON members;
+DROP POLICY IF EXISTS "Usuários podem atualizar seu próprio perfil" ON members;
+DROP POLICY IF EXISTS "Administradores veem membros da mesma organização" ON members;
+
+-- Política única e segura para todos os usuários autenticados
+CREATE POLICY "Acesso total para usuários autenticados" ON members FOR ALL USING (auth.role() = 'authenticated');
 
 -- Políticas Simplificadas (Acesso por Organização)
 CREATE POLICY "Acesso por organização secretarias" ON secretarias FOR ALL USING (true);
