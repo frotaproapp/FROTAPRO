@@ -161,10 +161,8 @@ CREATE POLICY "Usuários veem seu próprio perfil" ON members FOR SELECT USING (
 CREATE POLICY "Usuários podem criar seu próprio perfil" ON members FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Usuários podem atualizar seu próprio perfil" ON members FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Administradores veem membros da mesma organização" ON members FOR SELECT USING (
-    EXISTS (
-        SELECT 1 FROM organizations 
-        WHERE organizations.id = members.organization_id
-    )
+    auth.role() = 'authenticated' AND 
+    organization_id = (SELECT organization_id FROM members WHERE id = auth.uid() LIMIT 1)
 );
 
 -- Políticas Simplificadas (Acesso por Organização)
@@ -173,7 +171,6 @@ CREATE POLICY "Acesso por organização veículos" ON vehicles FOR ALL USING (tr
 CREATE POLICY "Acesso por organização viagens" ON trips FOR ALL USING (true);
 CREATE POLICY "Acesso por organização profissionais" ON professionals FOR ALL USING (true);
 CREATE POLICY "Acesso por organização solicitantes" ON solicitantes FOR ALL USING (true);
-CREATE POLICY "Acesso por organização membros global" ON members FOR SELECT USING (true);
 CREATE POLICY "Acesso por organização planos de saúde" ON health_plans FOR ALL USING (true);
 CREATE POLICY "Acesso por organização simulações DR" ON dr_simulations FOR ALL USING (true);
 CREATE POLICY "Acesso por organização auditoria" ON audit_logs FOR ALL USING (true);
