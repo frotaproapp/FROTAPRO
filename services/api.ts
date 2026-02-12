@@ -123,23 +123,28 @@ export const api = {
   alerts: { list: async () => [] },
   healthPlans: { 
     list: async () => {
-      const { data } = await supabase.from('health_plans').select('*');
+      const { data, error } = await supabase.from('health_plans').select('*');
+      if (error) console.error("❌ Erro ao listar planos de saúde:", error);
       return data || [];
     },
     add: async (name: string) => {
-      await supabase.from('health_plans').insert([{ name }]);
+      const { error } = await supabase.from('health_plans').insert([{ name }]);
+      if (error) console.error("❌ Erro ao adicionar plano de saúde:", error);
     },
     update: async (plan: any) => {
       const { id, ...updateData } = plan;
-      await supabase.from('health_plans').update(updateData).eq('id', id);
+      const { error } = await supabase.from('health_plans').update(updateData).eq('id', id);
+      if (error) console.error("❌ Erro ao atualizar plano de saúde:", error);
     },
     delete: async (id: string) => {
-      await supabase.from('health_plans').delete().eq('id', id);
+      const { error } = await supabase.from('health_plans').delete().eq('id', id);
+      if (error) console.error("❌ Erro ao deletar plano de saúde:", error);
     }
   },
   dr: {
     listSimulations: async () => {
-      const { data } = await supabase.from('dr_simulations').select('*').order('started_at', { ascending: false });
+      const { data, error } = await supabase.from('dr_simulations').select('*').order('started_at', { ascending: false });
+      if (error) console.error("❌ Erro ao listar simulações DR:", error);
       return (data || []) as any[];
     },
     getDashboardMetrics: async () => {
@@ -206,7 +211,12 @@ export const api = {
     createTenant: async (tenantData: any) => {
       const { data, error } = await supabase.from('organizations').insert([tenantData]).select();
       if (error) {
-        console.error("❌ Erro ao criar organização no Supabase:", error);
+        console.error("❌ ERRO DETALHADO SUPABASE (createTenant):", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
       return data;

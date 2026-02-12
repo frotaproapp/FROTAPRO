@@ -117,7 +117,26 @@ CREATE TABLE audit_logs (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 10. ROW LEVEL SECURITY (RLS) - SEGURANÇA MÁXIMA
+-- 10. TABELA DE PLANOS DE SAÚDE
+CREATE TABLE IF NOT EXISTS health_plans (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 11. TABELA DE SIMULAÇÕES DR (Disaster Recovery)
+CREATE TABLE IF NOT EXISTS dr_simulations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  status TEXT NOT NULL,
+  started_at TIMESTAMPTZ DEFAULT now(),
+  details JSONB DEFAULT '{}'::jsonb
+);
+
+-- 12. ROW LEVEL SECURITY (RLS) - SEGURANÇA MÁXIMA
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE secretarias ENABLE ROW LEVEL SECURITY;
@@ -126,6 +145,8 @@ ALTER TABLE professionals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE solicitantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE health_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dr_simulations ENABLE ROW LEVEL SECURITY;
 
 -- POLÍTICAS PARA ORGANIZATIONS
 CREATE POLICY "Permitir leitura de organizações" ON organizations
@@ -159,8 +180,10 @@ CREATE POLICY "Acesso por organização viagens" ON trips FOR ALL USING (true);
 CREATE POLICY "Acesso por organização profissionais" ON professionals FOR ALL USING (true);
 CREATE POLICY "Acesso por organização solicitantes" ON solicitantes FOR ALL USING (true);
 CREATE POLICY "Acesso por organização membros" ON members FOR SELECT USING (true);
+CREATE POLICY "Acesso por organização planos de saúde" ON health_plans FOR ALL USING (true);
+CREATE POLICY "Acesso por organização simulações DR" ON dr_simulations FOR ALL USING (true);
 
--- 11. PERMISSÕES DE ACESSO (GRANT) - CORREÇÃO PARA ERRO 403
+-- 13. PERMISSÕES DE ACESSO (GRANT) - CORREÇÃO PARA ERRO 403
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, authenticated, anon, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, authenticated, anon, service_role;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, authenticated, anon, service_role;
