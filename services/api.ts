@@ -49,9 +49,18 @@ export const api = {
       };
       
       // Mapeamento correto dos campos para o banco de dados
-      if (v.currentKm !== undefined) payload.current_km = v.currentKm;
-      if (v.ambulanceType !== undefined) payload.ambulance_type = v.ambulanceType;
-      if (v.hasOxygen !== undefined) payload.has_oxygen = v.hasOxygen;
+      if (v.currentKm !== undefined) {
+        payload.current_km = v.currentKm;
+        delete payload.currentKm;
+      }
+      if (v.ambulanceType !== undefined) {
+        payload.ambulance_type = v.ambulanceType;
+        delete payload.ambulanceType;
+      }
+      if (v.hasOxygen !== undefined) {
+        payload.has_oxygen = v.hasOxygen;
+        delete payload.hasOxygen;
+      }
       
       // Mapeamento do secretariaId para secretaria_id
       if (v.secretariaId !== undefined) {
@@ -362,6 +371,7 @@ export const api = {
       await supabase.from('members').delete().eq('id', userId);
     }
   },
+
   admin: {
     getAllTenants: async () => {
       const { data } = await supabase.from('organizations').select('*');
@@ -374,24 +384,6 @@ export const api = {
         userName: log.members?.name,
         userRole: log.members?.role
       })) as any[];
-    },
-    solicitors: {
-      list: async () => {
-        const { data, error } = await supabase.from('solicitantes').select('*').order('name');
-        if (error) {
-          console.error("❌ Erro ao listar solicitantes:", error);
-          return [];
-        }
-        return (data || []) as Solicitor[];
-      },
-      save: async (s: any) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data: member } = await supabase.from('members').select('organization_id').eq('id', user?.id).single();
-        const payload = { ...s, organization_id: member?.organization_id };
-        const { data, error } = await supabase.from('solicitantes').upsert([payload]).select();
-        if (error) throw error;
-        return data;
-      }
     },
     license: {
       getPermissions: async () => {
