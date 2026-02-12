@@ -50,11 +50,16 @@ export const Frota = () => {
         if (!editingVehicle.secretariaId && user?.role !== UserRole.SUPER_ADMIN) {
             throw new Error("Vínculo com Secretaria é obrigatório.");
         }
+        
+        console.log('Debug - Veículo sendo salvo:', editingVehicle);
+        console.log('Debug - Usuário atual:', user);
+        
         await api.vehicles.save(editingVehicle);
         setShowModal(false);
         loadData();
     } catch (e: any) { 
-        alert(e.message); 
+        console.error('Debug - Erro completo ao salvar veículo:', e);
+        alert(`Erro ao salvar veículo: ${e.message}`); 
     } finally { 
         setIsSaving(false); 
     }

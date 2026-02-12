@@ -43,18 +43,21 @@ export const api = {
       const orgId = member?.organization_id;
       if (!orgId) throw new Error("Organização não encontrada para o usuário");
       
-      const payload = { 
+      const payload: any = { 
         ...v, 
-        organization_id: orgId,
-        current_km: v.currentKm,
-        ambulance_type: v.ambulanceType,
-        has_oxygen: v.hasOxygen
+        organization_id: orgId
       };
       
-      // Remove campos que não devem ser enviados na criação/update
-      delete (payload as any).currentKm;
-      delete (payload as any).ambulanceType;
-      delete (payload as any).hasOxygen;
+      // Mapeamento correto dos campos para o banco de dados
+      if (v.currentKm !== undefined) payload.current_km = v.currentKm;
+      if (v.ambulanceType !== undefined) payload.ambulance_type = v.ambulanceType;
+      if (v.hasOxygen !== undefined) payload.has_oxygen = v.hasOxygen;
+      
+      // Mapeamento do secretariaId para secretaria_id
+      if (v.secretariaId !== undefined) {
+        payload.secretaria_id = v.secretariaId;
+        delete payload.secretariaId;
+      }
 
       const { data, error } = await supabase
         .from('vehicles')

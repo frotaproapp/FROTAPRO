@@ -51,6 +51,9 @@ export const OrgUsers = () => {
             setUsers(uData);
             setProfessionals(pData.filter(p => p.type === ProfessionalType.MOTORISTA));
             setSecretarias(sData.filter(s => s.active));
+            
+            console.log('Debug - Profissionais carregados:', pData.filter(p => p.type === ProfessionalType.MOTORISTA));
+            console.log('Debug - Role atual do form:', formData.role);
         } catch(e) {
             console.error("Erro ao carregar usuários:", e);
         } finally {
@@ -225,6 +228,25 @@ export const OrgUsers = () => {
                                     </select>}
                                 </div>
                             </div>
+
+                            {formData.role === UserRole.MOTORISTA && (
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-1.5 ml-1">Vincular Motorista (para acesso ao app mobile)</label>
+                                    <select
+                                        className="w-full border p-3.5 rounded-xl text-[11px] font-black uppercase bg-white text-black"
+                                        value={formData.linkedProfessionalId}
+                                        onChange={(e) => setFormData({...formData, linkedProfessionalId: e.target.value})}
+                                    >
+                                        <option value="">-- Selecione o Motorista --</option>
+                                        {professionals.map(pro => (
+                                            <option key={pro.id} value={pro.id}>
+                                                {pro.name} - {pro.documentNumber ? `CPF: ${pro.documentNumber}` : 'Sem documento'}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="text-[9px] text-gray-500 mt-1">⚠️ Vincule um motorista para permitir acesso ao app mobile e iniciar viagens</p>
+                                </div>
+                            )}
 
                             <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
                                 <input 
