@@ -53,6 +53,7 @@ export const Frota = () => {
         
         console.log('Debug - Veículo sendo salvo:', editingVehicle);
         console.log('Debug - Usuário atual:', user);
+        console.log('Debug - currentKm sendo enviado:', editingVehicle.currentKm);
         
         await api.vehicles.save(editingVehicle);
         setShowModal(false);

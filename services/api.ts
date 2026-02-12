@@ -43,15 +43,22 @@ export const api = {
       const orgId = member?.organization_id;
       if (!orgId) throw new Error("Organização não encontrada para o usuário");
       
+      console.log('🚗 API vehicles.save - Recebendo dados:', v);
+      console.log('📊 API vehicles.save - Campo currentKm recebido:', v.currentKm);
+      
       const payload: any = { 
         ...v, 
         organization_id: orgId
       };
       
+      console.log('🔄 API vehicles.save - Payload inicial:', payload);
+      
       // Mapeamento correto dos campos para o banco de dados
       if (v.currentKm !== undefined) {
+        console.log('✅ Mapeando currentKm:', v.currentKm, 'para current_km');
         payload.current_km = v.currentKm;
         delete payload.currentKm;
+        console.log('🗑️ Campo currentKm removido do payload');
       }
       if (v.ambulanceType !== undefined) {
         payload.ambulance_type = v.ambulanceType;
@@ -68,6 +75,8 @@ export const api = {
         delete payload.secretariaId;
       }
 
+      console.log('📤 API vehicles.save - Payload final para Supabase:', payload);
+      
       const { data, error } = await supabase
         .from('vehicles')
         .upsert([payload], { onConflict: 'id' })
@@ -75,8 +84,16 @@ export const api = {
         
       if (error) {
         console.error("❌ Erro ao salvar veículo (UPSERT):", error);
+        console.error("❌ Detalhes do erro:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
+      
+      console.log('✅ Veículo salvo com sucesso:', data);
       return data;
     }
   },
