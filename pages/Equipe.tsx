@@ -145,11 +145,18 @@ export const Equipe = () => {
                 {getStatusBadge(pro)}
             </div>
 
+            {pro.type === ProfessionalType.MOTORISTA && (
+                <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg mb-3">
+                    <div className={`w-2.5 h-2.5 rounded-full ${pro.userId ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className={`text-[10px] font-bold uppercase ${pro.userId ? 'text-green-700' : 'text-red-700'}`}>
+                        {pro.userId ? '✅ Vinculado ao App Mobile' : '❌ Não Vinculado - Sem Acesso Mobile'}
+                    </span>
+                </div>
+            )}
+
             <div className="pt-2 border-t border-gray-100 text-xs text-gray-500 flex justify-between items-center">
                 <span>Doc: <span className="font-mono text-gray-700">{pro.documentNumber || 'N/A'}</span></span>
-                {pro.userId && <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[9px] font-bold text-gray-400">APP VINCULADO</span>}
             </div>
-          </div>
         ))}
         
         {filteredPros.length === 0 && (

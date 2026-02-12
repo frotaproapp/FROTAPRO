@@ -389,12 +389,42 @@ export const api = {
     updateUser: async (tenantId: string, userId: string, data: any) => {
       console.log('👤 API org.updateUser - Recebendo dados:', { tenantId, userId, data });
       
+      // Verificar se todos os campos existem no data
+      console.log('🔍 Campos recebidos:', Object.keys(data));
+      console.log('📊 Valores dos campos:', data);
+      
+      // Validar campos obrigatórios
+      if (!data.name || !data.email || !data.role) {
+        throw new Error('Campos obrigatórios ausentes: name, email, role');
+      }
+      
+      // Remover campos undefined/null que podem causar problemas
+      const cleanData = Object.fromEntries(
+        Object.entries(data).filter(([_, value]) => value !== undefined && value !== null)
+      );
+      
+      console.log('🧹 Dados limpos:', cleanData);
+      
       const updateData = {
-        ...data,
+        ...cleanData,
         organization_id: tenantId
       };
       
-      console.log('📤 API org.updateUser - Dados para update:', updateData);
+      console.log('📤 API org.updateUser - Dados finais para update:', updateData);
+      
+      // Testar se o usuário existe antes do update
+      const { data: existingUser, error: checkError } = await supabase
+        .from('members')
+        .select('id')
+        .eq('id', userId)
+        .single();
+        
+      if (checkError) {
+        console.error('❌ Erro ao verificar se usuário existe:', checkError);
+        throw new Error(`Usuário não encontrado: ${checkError.message}`);
+      }
+      
+      console.log('✅ Usuário encontrado:', existingUser);
       
       const { data: updated, error } = await supabase
         .from('members')
@@ -410,9 +440,20 @@ export const api = {
           hint: error.hint,
           code: error.code,
           userId,
-          updateData
+          updateData,
+          originalData: data
         });
-        throw error;
+        
+        // Tentar identificar o problema específico
+        if (error.message.includes('duplicate key')) {
+          throw new Error('Email já está em uso por outro usuário');
+        } else if (error.message.includes('violates foreign key')) {
+          throw new Error('Referência inválida (organização ou secretaria não existe)');
+        } else if (error.message.includes('violates check constraint')) {
+          throw new Error('Dados inválidos para o campo especificado');
+        } else {
+          throw new Error(`Erro ao atualizar usuário: ${error.message}`);
+        }
       }
       
       console.log('✅ Usuário atualizado com sucesso:', updated);
