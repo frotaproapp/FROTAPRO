@@ -287,23 +287,27 @@ export const OrgUsers = () => {
                                         </div>
 
                                         {(() => {
-                                            const selectedProfessional = professionals.find(p => p.id === formData.linkedProfessionalId);
-                                            const professionalType = selectedProfessional?.type;
-                                            
-                                            if (professionalType === ProfessionalType.TECNICO) {
+                                            // Para MOTORISTA, sempre mostra CNH (habilitação)
+                                            if (formData.role === UserRole.MOTORISTA) {
                                                 return (
                                                     <div>
-                                                        <label className="block text-[10px] font-black text-gray-600 uppercase mb-1.5 ml-1">Número da Habilitação *</label>
+                                                        <label className="block text-[10px] font-black text-gray-600 uppercase mb-1.5 ml-1">Número da CNH *</label>
                                                         <input 
                                                             className="w-full border p-3.5 rounded-xl text-sm font-mono bg-white text-black uppercase" 
                                                             value={formData.habilitacao} 
                                                             onChange={(e) => setFormData({ ...formData, habilitacao: e.target.value })} 
-                                                            placeholder="Número da habilitação"
+                                                            placeholder="Número da CNH"
                                                             required 
                                                         />
                                                     </div>
                                                 );
-                                            } else if (professionalType === ProfessionalType.ENFERMEIRO) {
+                                            }
+                                            
+                                            // Para outros papéis, verifica o profissional vinculado
+                                            const selectedProfessional = professionals.find(p => p.id === formData.linkedProfessionalId);
+                                            const professionalType = selectedProfessional?.type;
+                                            
+                                            if (professionalType === ProfessionalType.ENFERMEIRO || professionalType === ProfessionalType.TECNICO) {
                                                 return (
                                                     <div>
                                                         <label className="block text-[10px] font-black text-gray-600 uppercase mb-1.5 ml-1">COREN *</label>
