@@ -479,11 +479,23 @@ export const api = {
         
         // Verificar se é erro de email duplicado
         if (error.message.includes('duplicate') || error.message.includes('unique') || error.code === '23505') {
-          console.error("❌ ERRO DE EMAIL DUPLICADO:", {
+          console.error("❌ ERRO DE DUPLICATE KEY:", {
             email: updateData.email,
+            cpf: updateData.cpf,
+            habilitacao: updateData.habilitacao,
             message: error.message
           });
-          throw new Error('Este email já está sendo usado por outro usuário');
+          
+          // Identificar qual campo está duplicado
+          if (error.message.includes('email')) {
+            throw new Error('Este email já está sendo usado por outro usuário');
+          } else if (error.message.includes('cpf')) {
+            throw new Error('Este CPF já está sendo usado por outro usuário');
+          } else if (error.message.includes('habilitacao')) {
+            throw new Error('Esta habilitação já está sendo usada por outro usuário');
+          } else {
+            throw new Error('Este valor já está sendo usado por outro usuário');
+          }
         }
         
         // Verificar se é erro de foreign key
