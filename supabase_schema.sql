@@ -159,6 +159,9 @@ CREATE POLICY "Super Admins podem criar organizações" ON organizations FOR INS
     EXISTS (SELECT 1 FROM members WHERE members.id = auth.uid() AND members.role = 'SUPER_ADMIN')
     OR (SELECT count(*) FROM organizations) = 0
 );
+CREATE POLICY "Super Admins podem excluir organizações" ON organizations FOR DELETE USING (
+    EXISTS (SELECT 1 FROM members WHERE members.id = auth.uid() AND members.role = 'SUPER_ADMIN')
+);
 
 -- Membros - Políticas Simplificadas para Evitar Recursão
 DROP POLICY IF EXISTS "Usuários veem seu próprio perfil" ON members;
