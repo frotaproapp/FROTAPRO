@@ -428,6 +428,11 @@ export const api = {
         organization_id: tenantId
       };
       
+      // Remover secretaria_id se for vazio ou null para evitar erro 400
+      if (!updateData.secretaria_id || updateData.secretaria_id === '') {
+        delete updateData.secretaria_id;
+      }
+      
       console.log('📤 API org.updateUser - Dados finais para update:', updateData);
       
       // Testar se o usuário existe antes do update
