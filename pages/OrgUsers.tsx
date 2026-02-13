@@ -287,20 +287,9 @@ export const OrgUsers = () => {
                                         </div>
 
                                         {(() => {
-                                            // Para MOTORISTA, sempre mostra CNH (habilitação)
+                                            // Para MOTORISTA, não mostra CNH pois está no profissional vinculado
                                             if (formData.role === UserRole.MOTORISTA) {
-                                                return (
-                                                    <div>
-                                                        <label className="block text-[10px] font-black text-gray-600 uppercase mb-1.5 ml-1">Número da CNH *</label>
-                                                        <input 
-                                                            className="w-full border p-3.5 rounded-xl text-sm font-mono bg-white text-black uppercase" 
-                                                            value={formData.habilitacao} 
-                                                            onChange={(e) => setFormData({ ...formData, habilitacao: e.target.value })} 
-                                                            placeholder="Número da CNH"
-                                                            required 
-                                                        />
-                                                    </div>
-                                                );
+                                                return null;
                                             }
                                             
                                             // Para outros papéis, verifica o profissional vinculado

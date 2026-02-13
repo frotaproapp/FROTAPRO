@@ -210,7 +210,7 @@ export const Equipe = () => {
                     </div>
                     <div>
                         <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Doc (CNH/CRM)</label>
-                        <input className={inputClass} value={editingPro.documentNumber || ''} onChange={e => setEditingPro({...editingPro, documentNumber: e.target.value})} placeholder="Registro"/>
+                        <input className={inputClass} value={editingPro.documentNumber || ''} onChange={e => setEditingPro({...editingPro, documentNumber: e.target.value})} placeholder="Registro" required={editingPro.type === ProfessionalType.MOTORISTA}/>
                     </div>
                  </div>
                  <div>
