@@ -433,27 +433,22 @@ export const api = {
         .select();
         
       if (error) {
-        console.error("❌ Erro ao atualizar usuário:", error);
-        console.error("❌ Detalhes completos do erro:", {
+        console.error("❌ ERRO 400 DETALHADO no updateUser:", {
           message: error.message,
           details: error.details,
           hint: error.hint,
           code: error.code,
           userId,
+          tenantId,
           updateData,
           originalData: data
         });
         
-        // Tentar identificar o problema específico
-        if (error.message.includes('duplicate key')) {
-          throw new Error('Email já está em uso por outro usuário');
-        } else if (error.message.includes('violates foreign key')) {
-          throw new Error('Referência inválida (organização ou secretaria não existe)');
-        } else if (error.message.includes('violates check constraint')) {
-          throw new Error('Dados inválidos para o campo especificado');
-        } else {
-          throw new Error(`Erro ao atualizar usuário: ${error.message}`);
-        }
+        // Log adicional para ver o que está sendo enviado
+        console.error("❌ REQUEST PAYLOAD:", JSON.stringify(updateData, null, 2));
+        console.error("❌ QUERY PARAMETERS:", { id: userId, organization_id: tenantId });
+        
+        throw new Error(`Erro 400 ao atualizar usuário: ${error.message}`);
       }
       
       console.log('✅ Usuário atualizado com sucesso:', updated);
