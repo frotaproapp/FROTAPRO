@@ -574,7 +574,22 @@ export const api = {
       return data;
     },
     deleteTenant: async (tenantId: string) => {
-      await supabase.from('organizations').delete().eq('id', tenantId);
+      console.log('🗑️ DEBUG API - Tentando deletar tenant:', tenantId);
+
+      const { error } = await supabase.from('organizations').delete().eq('id', tenantId);
+
+      if (error) {
+        console.error("❌ ERRO DETALHADO SUPABASE (deleteTenant):", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          tenantId
+        });
+        throw error;
+      }
+
+      console.log('✅ Tenant deletado com sucesso:', tenantId);
     },
     createTenant: async (tenantData: any) => {
       const { adminPassword, ...orgData } = tenantData;

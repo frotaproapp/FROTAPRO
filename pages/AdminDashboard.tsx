@@ -110,11 +110,38 @@ export const AdminDashboard = () => {
   };
 
   const handleDeleteTenant = async (tenantId: string) => {
-      if (!confirm("EXCLUIR PERMANENTEMENTE ESTA PREFEITURA?")) return;
-      try {
-          await api.admin.deleteTenant(tenantId);
-          loadTenants();
-      } catch (e: any) { alert(e.message); }
+    console.log('🗑️ DEBUG AdminDashboard - Iniciando exclusão de tenant:', tenantId);
+
+    if (!confirm("EXCLUIR PERMANENTEMENTE ESTA PREFEITURA?")) {
+      console.log('❌ DEBUG AdminDashboard - Usuário cancelou exclusão');
+      return;
+    }
+
+    setLoadingData(true);
+    try {
+      console.log('📡 DEBUG AdminDashboard - Chamando api.admin.deleteTenant...');
+      await api.admin.deleteTenant(tenantId);
+      console.log('✅ DEBUG AdminDashboard - Tenant deletado com sucesso');
+
+      console.log('🔄 DEBUG AdminDashboard - Recarregando tenants...');
+      await loadTenants();
+      console.log('✅ DEBUG AdminDashboard - Tenants recarregados');
+
+      alert("Prefeitura excluída com sucesso!");
+    } catch (error: any) {
+      console.error('❌ DEBUG AdminDashboard - Erro na exclusão:', error);
+
+      // Tratamento específico de erros comuns
+      if (error.message?.includes('permission') || error.message?.includes('policy') || error.message?.includes('RLS')) {
+        alert("Erro de permissão: Você não tem autorização para excluir prefeituras.");
+      } else if (error.message?.includes('foreign key') || error.code === '23503') {
+        alert("Não é possível excluir: Esta prefeitura possui dados relacionados (usuários, veículos, etc.).");
+      } else {
+        alert(`Erro ao excluir prefeitura: ${error.message || 'Erro desconhecido'}`);
+      }
+    } finally {
+      setLoadingData(false);
+    }
   };
 
   const handleCreateTenant = async () => {
