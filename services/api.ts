@@ -583,6 +583,20 @@ export const api = {
         throw error;
       }
       return data;
+    },
+    updateTenant: async (tenantData: any) => {
+      const { id, ...updateData } = tenantData;
+      const { data, error } = await supabase.from('organizations').update(updateData).eq('id', id).select();
+      if (error) {
+        console.error("❌ ERRO DETALHADO SUPABASE (updateTenant):", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+      return data;
     }
   }
 };
