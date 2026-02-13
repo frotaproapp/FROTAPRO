@@ -51,6 +51,8 @@ export const AdminDashboard = () => {
     setLoadingData(true);
     try {
       const list = await api.admin.getAllTenants();
+      console.log('🔍 DEBUG AdminDashboard - Tenants carregados:', list);
+      console.log('🔍 DEBUG AdminDashboard - Primeiro tenant:', list[0]);
       setTenants(list);
     } catch (e) {
       console.error("❌ Erro ao carregar tenants:", e);
@@ -83,12 +85,20 @@ export const AdminDashboard = () => {
     const label = days === 365 ? "ANUAL" : "30 DIAS";
     if (!confirm(`Confirmar renovação de ${label} para este cliente?`)) return;
     
+    console.log('🔄 DEBUG AdminDashboard - Iniciando renovação:', { tenantId, days });
     setLoadingData(true);
     try {
+      console.log('📡 DEBUG AdminDashboard - Chamando api.admin.renewLicense...');
       await api.admin.renewLicense(tenantId, days);
+      console.log('✅ DEBUG AdminDashboard - Licença renovada com sucesso');
+      
+      console.log('🔄 DEBUG AdminDashboard - Recarregando tenants...');
+      await loadTenants();
+      console.log('✅ DEBUG AdminDashboard - Tenants recarregados');
+      
       alert(`Licença renovada por ${days} dias!`);
-      loadTenants();
     } catch (error: any) { 
+        console.error('❌ DEBUG AdminDashboard - Erro na renovação:', error);
         alert("Erro na renovação: " + error.message); 
     } finally {
         setLoadingData(false);
@@ -199,6 +209,13 @@ export const AdminDashboard = () => {
                   {tenants.map((t) => {
                     const days = calculateDaysRemaining(t.license?.expiresAt || '');
                     const isExpired = days <= 0;
+                    
+                    console.log('📊 DEBUG AdminDashboard - Tenant:', t.name, {
+                      licenseExpiresAt: t.license?.expiresAt,
+                      calculatedDays: days,
+                      isExpired: isExpired,
+                      licenseStatus: t.license?.status
+                    });
                     
                     return (
                       <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
