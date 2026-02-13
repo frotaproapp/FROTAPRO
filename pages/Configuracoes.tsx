@@ -30,6 +30,10 @@ export const Configuracoes = () => {
   const getSafeError = (e: any) => e?.message || (typeof e === 'string' ? e : JSON.stringify(e));
 
   useEffect(() => {
+    console.log('🚀 DEBUG Configuracoes - useEffect triggered');
+    console.log('👤 DEBUG Configuracoes - Current user:', user);
+    console.log('🔑 DEBUG Configuracoes - User role:', user?.role);
+    console.log('🏢 DEBUG Configuracoes - User organization_id:', user?.organization_id);
     loadData();
   }, []);
 
@@ -39,16 +43,29 @@ export const Configuracoes = () => {
         const [s, sols, perms] = await Promise.all([
           api.settings.get(),
           api.solicitors.list(),
-          api.license.getPermissions()
+          api.admin.license.getPermissions()
         ]);
         
         if (s) setSettings(s);
         setSolicitors(sols);
         setStatus(perms.status);
 
-        if (user && user.role === UserRole.ADMIN_TENANT && user.organization_id) {
+        if (user && user.organization_id) {
+            console.log('🔍 DEBUG Configuracoes - Carregando secretarias:', {
+                userRole: user.role,
+                organizationId: user.organization_id,
+                hasOrganization: !!user.organization_id
+            });
             const secs = await secretariasService.listar(user.organization_id);
+            console.log('📋 DEBUG Configuracoes - Secretarias carregadas:', secs);
+            console.log('✅ DEBUG Configuracoes - Secretarias ativas filtradas:', secs.filter(sc => sc.active));
             setSecretarias(secs.filter(sc => sc.active));
+        } else {
+            console.log('❌ DEBUG Configuracoes - Não carregando secretarias:', {
+                userRole: user?.role,
+                organizationId: user?.organization_id,
+                condition: user && user.organization_id
+            });
         }
 
     } catch(e) {
@@ -83,7 +100,7 @@ export const Configuracoes = () => {
   const handleAddSolicitor = async () => {
     if (!newSolicitor.trim()) return;
     
-    if (user?.role === UserRole.ADMIN_TENANT && !selectedSecretariaId) {
+    if (user?.organization_id && !selectedSecretariaId) {
         alert("Selecione a Secretaria vinculada a esta unidade solicitante.");
         return;
     }
@@ -182,7 +199,7 @@ export const Configuracoes = () => {
                 <div className="space-y-3 mb-4">
                     <input className={inputClass} placeholder="Nome da Unidade" value={newSolicitor} onChange={e => setNewSolicitor(e.target.value)} />
                     <input className={inputClass} placeholder="Responsável" value={newResponsible} onChange={e => setNewResponsible(e.target.value)} />
-                    {user?.role === UserRole.ADMIN_TENANT && (
+                    {user?.organization_id && (
                         <select className={inputClass} value={selectedSecretariaId} onChange={e => setSelectedSecretariaId(e.target.value)}>
                             <option value="">-- Vincular a Secretaria --</option>
                             {secretarias.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
