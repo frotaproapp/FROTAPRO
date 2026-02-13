@@ -169,6 +169,9 @@ export interface Tenant {
   address?: string;
   active: boolean;
   plan?: string;
+  license_type?: string;
+  license_status?: string;
+  license_expires_at?: string;
   license?: {
     status: string;
     expiresAt: any;

@@ -207,14 +207,14 @@ export const AdminDashboard = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {tenants.map((t) => {
-                    const days = calculateDaysRemaining(t.license?.expiresAt || '');
+                    const days = calculateDaysRemaining(t.license_expires_at || '');
                     const isExpired = days <= 0;
                     
                     console.log('📊 DEBUG AdminDashboard - Tenant:', t.name, {
-                      licenseExpiresAt: t.license?.expiresAt,
+                      licenseExpiresAt: t.license_expires_at,
                       calculatedDays: days,
                       isExpired: isExpired,
-                      licenseStatus: t.license?.status
+                      licenseStatus: t.license_status
                     });
                     
                     return (
@@ -234,8 +234,8 @@ export const AdminDashboard = () => {
                             </div>
                         </td>
                         <td className="px-8 py-7">
-                            <div className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black tracking-tighter border ${t.license?.type === 'TRIAL' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-brand-50 text-brand-600 border-brand-100'}`}>
-                                {t.license?.type === 'TRIAL' ? 'PERÍODO TRIAL' : 'PLANO PROFISSIONAL'}
+                            <div className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black tracking-tighter border ${t.license_type === 'TRIAL' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-brand-50 text-brand-600 border-brand-100'}`}>
+                                {t.license_type === 'TRIAL' ? 'PERÍODO TRIAL' : 'PLANO PROFISSIONAL'}
                             </div>
                         </td>
                         <td className="px-8 py-7">
@@ -247,7 +247,7 @@ export const AdminDashboard = () => {
                                     <div className={`text-sm font-black ${isExpired ? 'text-red-600' : 'text-slate-900'}`}>
                                         {isExpired ? 'CONTRATO VENCIDO' : `${days} DIAS RESTANTES`}
                                     </div>
-                                    <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Expira em: {new Date(t.license?.expiresAt).toLocaleDateString()}</div>
+                                    <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Expira em: {t.license_expires_at ? new Date(t.license_expires_at).toLocaleDateString() : 'N/A'}</div>
                                 </div>
                             </div>
                         </td>
