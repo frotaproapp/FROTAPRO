@@ -131,38 +131,39 @@ export const Equipe = () => {
         {filteredPros.map(pro => (
           <div key={pro.id} className={`bg-white p-4 rounded-lg shadow-sm border transition-all hover:shadow-md ${activeDriverIds.has(pro.id) ? 'border-amber-300 ring-1 ring-amber-100' : 'border-gray-200'}`}>
             <div className="flex justify-between items-start mb-2">
-                <div>
-                    <h3 className="font-bold text-gray-900 text-lg">{pro.name}</h3>
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{pro.type}</span>
-                </div>
-                <div className="flex space-x-1">
-                    <button onClick={() => openModal(pro)} className="text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-blue-50"><Edit size={18}/></button>
-                    <button onClick={() => handleDelete(pro.id)} className="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-red-50"><Trash2 size={18}/></button>
-                </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-lg">{pro.name}</h3>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{pro.type}</span>
+              </div>
+              <div className="flex space-x-1">
+                <button onClick={() => openModal(pro)} className="text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-blue-50"><Edit size={18}/></button>
+                <button onClick={() => handleDelete(pro.id)} className="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-red-50"><Trash2 size={18}/></button>
+              </div>
             </div>
             
             <div className="mb-3">
-                {getStatusBadge(pro)}
+              {getStatusBadge(pro)}
             </div>
 
             {pro.type === ProfessionalType.MOTORISTA && (
-                <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg mb-3">
-                    <div className={`w-2.5 h-2.5 rounded-full ${pro.userId ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className={`text-[10px] font-bold uppercase ${pro.userId ? 'text-green-700' : 'text-red-700'}`}>
-                        {pro.userId ? '✅ Vinculado ao App Mobile' : '❌ Não Vinculado - Sem Acesso Mobile'}
-                    </span>
-                </div>
+              <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg mb-3">
+                <div className={`w-2.5 h-2.5 rounded-full ${pro.userId ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className={`text-[10px] font-bold uppercase ${pro.userId ? 'text-green-700' : 'text-red-700'}`}>
+                  {pro.userId ? '✅ Vinculado ao App Mobile' : '❌ Não Vinculado - Sem Acesso Mobile'}
+                </span>
+              </div>
             )}
 
             <div className="pt-2 border-t border-gray-100 text-xs text-gray-500 flex justify-between items-center">
-                <span>Doc: <span className="font-mono text-gray-700">{pro.documentNumber || 'N/A'}</span></span>
+              <span>Doc: <span className="font-mono text-gray-700">{pro.documentNumber || 'N/A'}</span></span>
             </div>
+          </div>
         ))}
         
         {filteredPros.length === 0 && (
-            <div className="col-span-full py-12 text-center text-gray-400 italic bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                Nenhum profissional encontrado com este filtro.
-            </div>
+          <div className="col-span-full py-12 text-center text-gray-400 italic bg-gray-50 rounded-lg border border-dashed border-gray-300">
+            Nenhum profissional encontrado com este filtro.
+          </div>
         )}
       </div>
       )}
