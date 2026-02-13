@@ -403,10 +403,28 @@ export const api = {
         Object.entries(data).filter(([_, value]) => value !== undefined && value !== null)
       );
       
-      console.log('🧹 Dados limpos:', cleanData);
+      console.log('🧹 Dados limpos (antes do filtro de vazios):', cleanData);
+      
+      // Para usuários MOTORISTA: não enviar COREN e CRM se estiverem vazios
+      // Para usuários ENFERMEIRO/TECNICO: não enviar HABILITACAO e CRM se estiverem vazios  
+      // Para usuários MEDICO: não enviar HABILITACAO e COREN se estiverem vazios
+      const filteredData = { ...cleanData };
+      
+      if (cleanData.role === 'MOTORISTA') {
+        if (!filteredData.coren || filteredData.coren === '') delete filteredData.coren;
+        if (!filteredData.crm || filteredData.crm === '') delete filteredData.crm;
+      } else if (cleanData.role === 'ENFERMEIRO' || cleanData.role === 'TECNICO') {
+        if (!filteredData.habilitacao || filteredData.habilitacao === '') delete filteredData.habilitacao;
+        if (!filteredData.crm || filteredData.crm === '') delete filteredData.crm;
+      } else if (cleanData.role === 'MEDICO') {
+        if (!filteredData.habilitacao || filteredData.habilitacao === '') delete filteredData.habilitacao;
+        if (!filteredData.coren || filteredData.coren === '') delete filteredData.coren;
+      }
+      
+      console.log('🎯 Dados filtrados (campos vazios removidos):', filteredData);
       
       const updateData = {
-        ...cleanData,
+        ...filteredData,
         organization_id: tenantId
       };
       
