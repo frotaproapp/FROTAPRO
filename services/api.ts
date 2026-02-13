@@ -572,17 +572,57 @@ export const api = {
       await supabase.from('organizations').delete().eq('id', tenantId);
     },
     createTenant: async (tenantData: any) => {
-      const { data, error } = await supabase.from('organizations').insert([tenantData]).select();
-      if (error) {
-        console.error("❌ ERRO DETALHADO SUPABASE (createTenant):", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
+      const { adminPassword, ...orgData } = tenantData;
+
+      // Primeiro, criar a organização
+      const { data: orgDataResult, error: orgError } = await supabase.from('organizations').insert([{
+        name: orgData.name,
+        cnpj: orgData.cnpj,
+        state: orgData.state,
+        address: orgData.address,
+        email: orgData.email
+      }]).select();
+
+      if (orgError) {
+        console.error("❌ ERRO ao criar organização:", {
+          message: orgError.message,
+          details: orgError.details,
+          hint: orgError.hint,
+          code: orgError.code
         });
-        throw error;
+        throw orgError;
       }
-      return data;
+
+      const organization = orgDataResult[0];
+      console.log('✅ Organização criada:', organization);
+
+      // Agora criar o usuário administrador
+      if (adminPassword) {
+        try {
+          // Usar a API de criação de usuário existente que inclui senha
+          const userResult = await api.org.createUser(organization.id, {
+            name: 'Administrador Sistema',
+            email: orgData.email,
+            role: 'ADMIN_TENANT',
+            password: adminPassword,
+            active: true
+          });
+
+          console.log('✅ Usuário administrador criado:', userResult);
+        } catch (userError: any) {
+          console.error("❌ ERRO ao criar usuário administrador:", userError);
+          // Se falhar na criação do usuário, tentar deletar a organização criada
+          try {
+            await supabase.from('organizations').delete().eq('id', organization.id);
+            console.log('🗑️ Organização deletada devido a erro na criação do usuário');
+          } catch (deleteError) {
+            console.error('❌ ERRO ao deletar organização após falha:', deleteError);
+          }
+          throw userError;
+        }
+      }
+
+      return orgDataResult;
     },
     updateTenant: async (tenantData: any) => {
       const { id, ...updateData } = tenantData;
