@@ -25,11 +25,24 @@ export const Equipe = () => {
   const loadData = async () => {
     setLoading(true);
     try {
+      console.log('🔍 Debug - Iniciando loadData');
+      console.log('🔍 Debug - API object:', api);
+      console.log('🔍 Debug - API.professionals:', api.professionals);
+      console.log('🔍 Debug - API.professionals.list:', api.professionals?.list);
+      console.log('🔍 Debug - API.trips:', api.trips);
+      console.log('🔍 Debug - API.trips.list:', api.trips?.list);
+      
       // Busca paralela de profissionais e viagens para verificar status real
+      const prosPromise = api.professionals?.list ? api.professionals.list() : Promise.resolve([]);
+      const tripsPromise = api.trips?.list ? api.trips.list() : Promise.resolve([]);
+      
       const [prosData, tripsData] = await Promise.all([
-          api.professionals.list(),
-          api.trips.list()
+          prosPromise,
+          tripsPromise
       ]);
+      
+      console.log('🔍 Debug - Profissionais carregados:', prosData);
+      console.log('🔍 Debug - Viagens carregadas:', tripsData);
       
       setPros(prosData);
 
