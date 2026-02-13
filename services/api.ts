@@ -423,7 +423,7 @@ export const api = {
       
       console.log('🎯 Dados filtrados (campos vazios removidos):', filteredData);
       
-      const updateData = {
+      const updateData: any = {
         ...filteredData,
         organization_id: tenantId
       };
@@ -451,6 +451,7 @@ export const api = {
         .select();
         
       if (error) {
+        console.error("❌ ERRO 400 DETALHADO no updateUser - OBJETO COMPLETO:", error);
         console.error("❌ ERRO 400 DETALHADO no updateUser:", {
           message: error.message,
           details: error.details,
@@ -465,6 +466,40 @@ export const api = {
         // Log adicional para ver o que está sendo enviado
         console.error("❌ REQUEST PAYLOAD:", JSON.stringify(updateData, null, 2));
         console.error("❌ QUERY PARAMETERS:", { id: userId, organization_id: tenantId });
+        
+        // Verificar se o erro é relacionado a RLS ou permissões
+        if (error.message.includes('permission') || error.message.includes('policy') || error.message.includes('RLS')) {
+          console.error("❌ POSSÍVEL PROBLEMA DE PERMISSÃO RLS:", error.message);
+        }
+        
+        // Verificar se é erro de email duplicado
+        if (error.message.includes('duplicate') || error.message.includes('unique') || error.code === '23505') {
+          console.error("❌ ERRO DE EMAIL DUPLICADO:", {
+            email: updateData.email,
+            message: error.message
+          });
+          throw new Error('Este email já está sendo usado por outro usuário');
+        }
+        
+        // Verificar se é erro de foreign key
+        if (error.message.includes('foreign key') || error.message.includes('violates foreign key') || error.code === '23503') {
+          console.error("❌ ERRO DE FOREIGN KEY:", {
+            message: error.message,
+            organization_id: updateData.organization_id,
+            secretaria_id: updateData.secretaria_id
+          });
+          throw new Error('Organização ou secretaria inválida');
+        }
+        
+        // Verificar se é erro de constraint de check
+        if (error.message.includes('check constraint') || error.message.includes('violates check') || error.code === '23514') {
+          console.error("❌ ERRO DE CONSTRAINT:", {
+            message: error.message,
+            role: updateData.role,
+            active: updateData.active
+          });
+          throw new Error('Dados inválidos fornecidos');
+        }
         
         throw new Error(`Erro 400 ao atualizar usuário: ${error.message}`);
       }
