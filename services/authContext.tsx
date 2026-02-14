@@ -94,118 +94,73 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
-    let isInitializing = false;
 
     const initAuth = async () => {
-      // Previne múltiplas inicializações simultâneas
-      if (isInitializing) {
-        console.log('Inicialização já em andamento, ignorando...');
-        return;
-      }
-      
-      isInitializing = true;
       console.log('Iniciando autenticação...');
-      
-      let authCompleted = false; // Declarar no escopo correto
-      
-      try {
-        // Timeout ainda maior (60 segundos) para casos extremos
-        const timeoutId = setTimeout(() => {
-          if (!authCompleted && mounted) {
-            console.warn('Timeout de inicialização de auth excedido (60s) - forçando resolução');
-            setLoading(false);
-            setUserReady(true);
-            setUser(null);
-            isInitializing = false;
-          }
-        }, 60000); // 60 segundos
 
-        console.log('Obtendo sessão...');
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Erro ao obter sessão:', sessionError);
-          if (!authCompleted && mounted) {
-            setLoading(false);
-            setUserReady(true);
-            setUser(null);
-          }
-          clearTimeout(timeoutId);
-          isInitializing = false;
-          return;
-        }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
         if (session?.user) {
           console.log('Sessão encontrada, buscando perfil...');
-          const startTime = Date.now();
           const profile = await fetchProfile(session.user.id);
-          const fetchTime = Date.now() - startTime;
-          console.log(`Perfil buscado em ${fetchTime}ms`);
-          
-          if (!authCompleted && mounted) {
+
+          if (mounted) {
             setUser(profile);
             setLoading(false);
             setUserReady(true);
-            authCompleted = true;
           }
         } else {
-          console.log('Nenhuma sessão ativa encontrada');
-          if (!authCompleted && mounted) {
+          if (mounted) {
             setUser(null);
             setLoading(false);
             setUserReady(true);
-            authCompleted = true;
           }
         }
-        
-        clearTimeout(timeoutId);
-        isInitializing = false;
-        console.log('Inicialização de auth concluída');
-        
+
       } catch (error) {
-        console.error('Erro durante inicialização de auth:', error);
-        if (!authCompleted && mounted) {
+        console.error('Erro na inicialização:', error);
+        if (mounted) {
           setUser(null);
           setLoading(false);
           setUserReady(true);
         }
-        isInitializing = false;
+      } finally {
+        initializing.current = false;
+        console.log('Inicialização concluída');
       }
     };
 
     initAuth();
 
-    initializing.current = false;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session ? 'session exists' : 'no session');
-      
-      // Ignora mudanças se ainda estiver inicializando
-      if (initializing.current) {
-        console.log('Ignorando mudança de auth state - inicialização em andamento');
-        return;
-      }
-      
-      if (session?.user) {
-        console.log('Buscando perfil após mudança de estado...');
-        const profile = await fetchProfile(session.user.id);
-        if (mounted) {
-          setUser(profile);
-          setLoading(false);
-          setUserReady(true);
+        if (initializing.current) {
+          console.log('Ignorando mudança durante init');
+          return;
         }
-      } else {
-        if (mounted) {
-          setUser(null);
-          setLoading(false);
-          setUserReady(true);
+
+        if (session?.user) {
+          const profile = await fetchProfile(session.user.id);
+          if (mounted) {
+            setUser(profile);
+            setLoading(false);
+            setUserReady(true);
+          }
+        } else {
+          if (mounted) {
+            setUser(null);
+            setLoading(false);
+            setUserReady(true);
+          }
         }
       }
-    });
+    );
 
     return () => {
       mounted = false;
-      isInitializing = false;
       subscription.unsubscribe();
     };
   }, []);
