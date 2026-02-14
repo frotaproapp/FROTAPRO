@@ -18,6 +18,9 @@ export const Viagens = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTicketTrip, setSelectedTicketTrip] = useState<Trip | null>(null);
   
+  const [customType, setCustomType] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  
   const initialTripState = {
     status: TripStatus.AGENDADA,
     type: 'CONSULTA',
@@ -32,6 +35,9 @@ export const Viagens = () => {
     dateOut: new Date().toISOString().split('T')[0],
     timeOut: '07:00',
     kmOut: 0,
+    kmIn: 0,
+    dateReturn: '',
+    timeReturn: '',
     driverId: '',
     driverName: '',
     vehicleId: '',
@@ -98,6 +104,13 @@ export const Viagens = () => {
       e.preventDefault();
       setIsSaving(true);
       try {
+          if (editingTrip.status === TripStatus.CONCLUIDA) {
+            if (!editingTrip.dateReturn || !editingTrip.timeReturn || editingTrip.kmIn === undefined || editingTrip.kmIn === 0) {
+              alert("Para finalizar a viagem, preencha data, hora e KM de chegada.");
+              setIsSaving(false);
+              return;
+            }
+          }
           const payload = { ...editingTrip };
           if (payload.patient) payload.patient.cpf = payload.patient.cpf.replace(/\D/g, '');
           if (payload.patient?.companionCpf) payload.patient.companionCpf = payload.patient.companionCpf.replace(/\D/g, '');
@@ -162,7 +175,11 @@ export const Viagens = () => {
                                       <div><label className={labelClass}>Condutor *</label><input list="dl-d" className={inputClass} value={editingTrip.driverName} onChange={e => setEditingTrip({...editingTrip, driverName: e.target.value.toUpperCase()})} required disabled={viewOnly}/><datalist id="dl-d">{drivers.map(d => <option key={d.id} value={d.name}/>)}</datalist></div>
                                   </div>
                                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                      <div><label className={labelClass}>Solicitante Origem</label><input list="dl-s" className={inputClass} value={editingTrip.solicitante} onChange={e => setEditingTrip({...editingTrip, solicitante: e.target.value.toUpperCase()})} disabled={viewOnly}/><datalist id="dl-s">{solicitors.map(s => <option key={s.id} value={s.name}/>)}</datalist></div>
+                                      <div><label className={labelClass}>Solicitante Origem</label><input list="dl-s" className={inputClass} value={editingTrip.solicitante} onChange={e => {
+                                        const value = e.target.value.toUpperCase();
+                                        const selectedSolicitor = solicitors.find(s => s.name.toUpperCase() === value);
+                                        setEditingTrip({...editingTrip, solicitante: value, responsavel: selectedSolicitor?.responsible || ''});
+                                      }} disabled={viewOnly}/><datalist id="dl-s">{solicitors.map(s => <option key={s.id} value={s.name}/>)}</datalist></div>
                                       <div><label className={labelClass}>Solicitante 2</label><input className={inputClass} value={editingTrip.solicitante2} onChange={e => setEditingTrip({...editingTrip, solicitante2: e.target.value.toUpperCase()})} disabled={viewOnly}/></div>
                                       <div><label className={labelClass}>Responsável</label><input className={inputClass} value={editingTrip.responsavel} onChange={e => setEditingTrip({...editingTrip, responsavel: e.target.value.toUpperCase()})} disabled={viewOnly}/></div>
                                   </div>
@@ -175,7 +192,15 @@ export const Viagens = () => {
                               <div className="grid grid-cols-1 gap-3">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                       <div><label className={labelClass}>Unidade Destino</label><input className={inputClass} value={editingTrip.destinationUnit} onChange={e => setEditingTrip({...editingTrip, destinationUnit: e.target.value.toUpperCase()})} disabled={viewOnly}/></div>
-                                      <div><label className={labelClass}>Tipo de Translado</label><select className={inputClass} value={editingTrip.type} onChange={e => setEditingTrip({...editingTrip, type: e.target.value})} disabled={viewOnly}>
+                                      <div><label className={labelClass}>Tipo de Translado</label><select className={inputClass} value={editingTrip.type} onChange={e => {
+                                        const val = e.target.value;
+                                        if (val === 'OUTROS') {
+                                          setShowCustomInput(true);
+                                        } else {
+                                          setShowCustomInput(false);
+                                          setEditingTrip({...editingTrip, type: val});
+                                        }
+                                      }} disabled={viewOnly}>
                                         <option value="CONSULTA">CONSULTA</option>
                                         <option value="EXAME">EXAME</option>
                                         <option value="CIRURGIA">CIRURGIA</option>
@@ -185,6 +210,16 @@ export const Viagens = () => {
                                         <option value="TRANSFERENCIA">TRANSFERENCIA</option>
                                         <option value="OUTROS">OUTROS (Cadastrar Novo)</option>
                                       </select>
+                                      {showCustomInput && (
+                                        <div className="flex gap-2 mt-2">
+                                          <input className={inputClass} placeholder="Digite o tipo personalizado" value={customType} onChange={e => setCustomType(e.target.value.toUpperCase())} disabled={viewOnly}/>
+                                          {!viewOnly && <button type="button" onClick={() => {
+                                            setEditingTrip({...editingTrip, type: customType});
+                                            setShowCustomInput(false);
+                                            setCustomType('');
+                                          }} className="bg-green-600 text-white px-3 py-2 rounded">+</button>}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                   <div><label className={labelClass}>Destino 1 *</label><input className={inputClass} value={editingTrip.destination} onChange={e => setEditingTrip({...editingTrip, destination: e.target.value.toUpperCase()})} required disabled={viewOnly}/></div>
@@ -203,6 +238,13 @@ export const Viagens = () => {
                                         <option value="NORMAL">NORMAL</option>
                                         <option value="ALTA">ALTA</option>
                                       </select></div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-dashed">
+                                      <div><label className={labelClass}>Data Chegada</label><input type="date" className={inputClass} value={editingTrip.dateReturn} onChange={e => setEditingTrip({...editingTrip, dateReturn: e.target.value})} disabled={viewOnly}/></div>
+                                      <div><label className={labelClass}>Hora Chegada</label><input type="time" className={inputClass} value={editingTrip.timeReturn} onChange={e => setEditingTrip({...editingTrip, timeReturn: e.target.value})} disabled={viewOnly}/></div>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <div><label className={labelClass}>KM Chegada</label><input type="number" className={inputClass} value={editingTrip.kmIn} onChange={e => setEditingTrip({...editingTrip, kmIn: parseInt(e.target.value) || 0})} disabled={viewOnly}/></div>
                                   </div>
                           </div>
                           </div>
