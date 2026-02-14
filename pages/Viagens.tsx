@@ -38,6 +38,7 @@ export const Viagens = () => {
     kmIn: 0,
     dateReturn: '',
     timeReturn: '',
+    fuelLiters: 0,
     driverId: '',
     driverName: '',
     vehicleId: '',
@@ -105,8 +106,8 @@ export const Viagens = () => {
       setIsSaving(true);
       try {
           if (editingTrip.status === TripStatus.CONCLUIDA) {
-            if (!editingTrip.dateReturn || !editingTrip.timeReturn || editingTrip.kmIn === undefined || editingTrip.kmIn === 0) {
-              alert("Para finalizar a viagem, preencha data, hora e KM de chegada.");
+            if (!editingTrip.dateReturn || !editingTrip.timeReturn || editingTrip.kmIn === undefined || editingTrip.kmIn === 0 || !editingTrip.fuelLiters || editingTrip.fuelLiters === 0) {
+              alert("Para finalizar a viagem, preencha data, hora, KM e litros de chegada.");
               setIsSaving(false);
               return;
             }
@@ -143,6 +144,10 @@ export const Viagens = () => {
           if (payload.tripChecklist) {
             payload.checklist = payload.tripChecklist;
             delete payload.tripChecklist;
+          }
+          if (payload.fuelLiters !== undefined && payload.fuelLiters !== 0) {
+            payload.fuel_liters = payload.fuelLiters;
+            delete payload.fuelLiters;
           }
           if (payload.patient) payload.patient.cpf = payload.patient.cpf.replace(/\D/g, '');
           if (payload.patient?.companionCpf) payload.patient.companionCpf = payload.patient.companionCpf.replace(/\D/g, '');
@@ -202,9 +207,14 @@ export const Viagens = () => {
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                       <div><label className={labelClass}>Veículo *</label><input list="dl-v" className={inputClass} value={editingTrip.vehicleSnapshot} onChange={e => {
                                         const value = e.target.value.toUpperCase();
-                                        setEditingTrip({...editingTrip, vehicleSnapshot: value});
+                                        const selectedVehicle = vehicles.find(v => `${v.plate} - ${v.model}`.toUpperCase() === value);
+                                        setEditingTrip({...editingTrip, vehicleSnapshot: value, vehicleId: selectedVehicle?.id || ''});
                                       }} required disabled={viewOnly}/><datalist id="dl-v">{vehicles.map(v => <option key={v.id} value={`${v.plate} - ${v.model}`}/>)}</datalist></div>
-                                      <div><label className={labelClass}>Condutor *</label><input list="dl-d" className={inputClass} value={editingTrip.driverName} onChange={e => setEditingTrip({...editingTrip, driverName: e.target.value.toUpperCase()})} required disabled={viewOnly}/><datalist id="dl-d">{drivers.map(d => <option key={d.id} value={d.name}/>)}</datalist></div>
+                                      <div><label className={labelClass}>Condutor *</label><input list="dl-d" className={inputClass} value={editingTrip.driverName} onChange={e => {
+                                        const value = e.target.value.toUpperCase();
+                                        const selectedDriver = drivers.find(d => d.name.toUpperCase() === value);
+                                        setEditingTrip({...editingTrip, driverName: value, driverId: selectedDriver?.id || ''});
+                                      }} required disabled={viewOnly}/><datalist id="dl-d">{drivers.map(d => <option key={d.id} value={d.name}/>)}</datalist></div>
                                   </div>
                                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                       <div><label className={labelClass}>Solicitante Origem</label><input list="dl-s" className={inputClass} value={editingTrip.solicitante} onChange={e => {
@@ -277,6 +287,7 @@ export const Viagens = () => {
                                   </div>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                       <div><label className={labelClass}>KM Chegada</label><input type="number" className={inputClass} value={editingTrip.kmIn} onChange={e => setEditingTrip({...editingTrip, kmIn: parseInt(e.target.value) || 0})} disabled={viewOnly}/></div>
+                                      <div><label className={labelClass}>Litros Abastecidos</label><input type="number" step="0.01" className={inputClass} value={editingTrip.fuelLiters} onChange={e => setEditingTrip({...editingTrip, fuelLiters: parseFloat(e.target.value) || 0})} disabled={viewOnly}/></div>
                                   </div>
                           </div>
                           </div>

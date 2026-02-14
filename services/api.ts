@@ -138,6 +138,14 @@ export const api = {
     },
     update: async (t: any) => {
       const { id, ...updateData } = t;
+      
+      // Validate required fields for trip finalization
+      if (updateData.status === 'CONCLUIDA') {
+        if (!updateData.date_return || !updateData.time_return || updateData.km_in === undefined || updateData.km_in === 0 || updateData.fuel_liters === undefined || updateData.fuel_liters === 0) {
+          throw new Error("Para finalizar a viagem, preencha data, hora, KM e litros de chegada.");
+        }
+      }
+      
       const { data, error } = await supabase.from('trips').update(updateData).eq('id', id).select();
       if (error) {
         console.error("❌ Erro ao atualizar viagem:", error);
