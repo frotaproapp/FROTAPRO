@@ -106,8 +106,8 @@ export const Viagens = () => {
       setIsSaving(true);
       try {
           if (editingTrip.status === TripStatus.CONCLUIDA) {
-            if (!editingTrip.dateReturn || !editingTrip.timeReturn || editingTrip.kmIn === undefined || editingTrip.kmIn === 0 || !editingTrip.fuelLiters || editingTrip.fuelLiters === 0) {
-              alert("Para finalizar a viagem, preencha data, hora, KM e litros de chegada.");
+            if (editingTrip.kmIn === undefined || editingTrip.kmIn === 0 || !editingTrip.fuelLiters || editingTrip.fuelLiters === 0) {
+              alert("Para finalizar a viagem, preencha KM e litros de chegada.");
               setIsSaving(false);
               return;
             }

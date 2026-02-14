@@ -141,8 +141,15 @@ export const api = {
       
       // Validate required fields for trip finalization
       if (updateData.status === 'CONCLUIDA') {
-        if (!updateData.date_return || !updateData.time_return || updateData.km_in === undefined || updateData.km_in === 0 || updateData.fuel_liters === undefined || updateData.fuel_liters === 0) {
-          throw new Error("Para finalizar a viagem, preencha data, hora, KM e litros de chegada.");
+        if (updateData.km_in === undefined || updateData.km_in === 0 || updateData.fuel_liters === undefined || updateData.fuel_liters === 0) {
+          throw new Error("Para finalizar a viagem, preencha KM e litros de chegada.");
+        }
+        // Auto-set date and time if not provided
+        if (!updateData.date_return) {
+          updateData.date_return = new Date().toISOString().split('T')[0];
+        }
+        if (!updateData.time_return) {
+          updateData.time_return = new Date().toTimeString().split(' ')[0];
         }
       }
       
