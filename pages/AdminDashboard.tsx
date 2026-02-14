@@ -37,8 +37,7 @@ export const AdminDashboard = () => {
     cnpj: '', 
     estado: '', 
     email: '', 
-    address: '',
-    adminPassword: ''
+    address: ''
   });
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -145,12 +144,11 @@ export const AdminDashboard = () => {
   };
 
   const handleCreateTenant = async () => {
-    if (!newTenant.name || !newTenant.email || !newTenant.cnpj || !newTenant.adminPassword) {
+    if (!newTenant.name || !newTenant.email || !newTenant.cnpj) {
       const missing = [];
       if (!newTenant.name) missing.push('Nome');
       if (!newTenant.email) missing.push('E-mail');
       if (!newTenant.cnpj) missing.push('CNPJ');
-      if (!newTenant.adminPassword) missing.push('Senha');
       alert(`${missing.join(', ')} ${missing.length > 1 ? 'são obrigatórios' : 'é obrigatório'}.`);
       return;
     }
@@ -162,13 +160,12 @@ export const AdminDashboard = () => {
         email: newTenant.email, 
         cnpj: newTenant.cnpj, 
         state: newTenant.estado,
-        address: newTenant.address,
-        adminPassword: newTenant.adminPassword
+        address: newTenant.address
       });
       setShowCreateModal(false);
-      setNewTenant({ name: '', cnpj: '', estado: '', email: '', address: '', adminPassword: '' });
+      setNewTenant({ name: '', cnpj: '', estado: '', email: '', address: '' });
       await loadTenants();
-      alert("Tenant criado com sucesso! O administrador pode fazer login com o e-mail e senha definidos.");
+      alert("Tenant criado com sucesso! Você pode criar o usuário administrador através da gestão de usuários da organização.");
     } catch (e: any) { 
       console.error("❌ Erro detalhado na criação:", e);
       alert("Erro ao criar: " + (e.message || "Verifique o console para detalhes")); 
@@ -403,18 +400,6 @@ export const AdminDashboard = () => {
                 <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">E-mail do Administrador</label>
                     <input className="w-full border-2 border-slate-100 p-4 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all" placeholder="admin@municipio.gov.br" value={newTenant.email} onChange={(e) => setNewTenant({ ...newTenant, email: e.target.value.toLowerCase() })} />
-                </div>
-
-                <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Senha Inicial do Administrador</label>
-                    <input 
-                        type="password"
-                        className="w-full border-2 border-slate-100 p-4 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all" 
-                        placeholder="Digite uma senha segura" 
-                        value={newTenant.adminPassword} 
-                        onChange={(e) => setNewTenant({ ...newTenant, adminPassword: e.target.value })} 
-                    />
-                    <p className="text-[9px] text-slate-400 mt-1 ml-1">Esta será a senha inicial do administrador. Ele poderá alterá-la depois.</p>
                 </div>
             </div>
 
