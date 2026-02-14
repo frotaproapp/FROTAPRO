@@ -260,7 +260,7 @@ export const OrgUsers = () => {
                                             <option value="">-- Selecione o Motorista --</option>
                                             {professionals.map(pro => (
                                                 <option key={pro.id} value={pro.id}>
-                                                    {pro.name} - {pro.documentNumber ? `CPF: ${pro.documentNumber}` : 'Sem documento'}
+                                                    {pro.name} - {pro.documentNumber ? `CNH: ${pro.documentNumber}` : 'Sem documento'}
                                                 </option>
                                             ))}
                                         </select>
@@ -274,17 +274,19 @@ export const OrgUsers = () => {
                                     <h4 className="text-[10px] font-black text-blue-800 uppercase flex items-center tracking-widest"><UserCheck size={14} className="mr-2"/> Documentação Profissional</h4>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-600 uppercase mb-1.5 ml-1">CPF *</label>
-                                            <input 
-                                                className="w-full border p-3.5 rounded-xl text-sm font-mono bg-white text-black uppercase" 
-                                                value={formData.cpf} 
-                                                onChange={(e) => setFormData({ ...formData, cpf: e.target.value.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') })} 
-                                                placeholder="000.000.000-00"
-                                                maxLength={14}
-                                                required 
-                                            />
-                                        </div>
+                                        {formData.role !== UserRole.MOTORISTA && (
+                                            <div>
+                                                <label className="block text-[10px] font-black text-gray-600 uppercase mb-1.5 ml-1">CPF *</label>
+                                                <input 
+                                                    className="w-full border p-3.5 rounded-xl text-sm font-mono bg-white text-black uppercase" 
+                                                    value={formData.cpf} 
+                                                    onChange={(e) => setFormData({ ...formData, cpf: e.target.value.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') })} 
+                                                    placeholder="000.000.000-00"
+                                                    maxLength={14}
+                                                    required 
+                                                />
+                                            </div>
+                                        )}
 
                                         {(() => {
                                             // Para MOTORISTA, não mostra CNH pois está no profissional vinculado
