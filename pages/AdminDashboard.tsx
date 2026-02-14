@@ -35,9 +35,10 @@ export const AdminDashboard = () => {
   const [newTenant, setNewTenant] = useState({ 
     name: '', 
     cnpj: '', 
-    estado: '', 
+    state: '', 
     email: '', 
-    address: ''
+    address: '',
+    adminPassword: ''
   });
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -144,11 +145,12 @@ export const AdminDashboard = () => {
   };
 
   const handleCreateTenant = async () => {
-    if (!newTenant.name || !newTenant.email || !newTenant.cnpj) {
+    if (!newTenant.name || !newTenant.email || !newTenant.cnpj || !newTenant.adminPassword) {
       const missing = [];
       if (!newTenant.name) missing.push('Nome');
       if (!newTenant.email) missing.push('E-mail');
       if (!newTenant.cnpj) missing.push('CNPJ');
+      if (!newTenant.adminPassword) missing.push('Senha');
       alert(`${missing.join(', ')} ${missing.length > 1 ? 'são obrigatórios' : 'é obrigatório'}.`);
       return;
     }
@@ -159,13 +161,14 @@ export const AdminDashboard = () => {
         name: newTenant.name, 
         email: newTenant.email, 
         cnpj: newTenant.cnpj, 
-        state: newTenant.estado,
-        address: newTenant.address
+        state: newTenant.state,
+        address: newTenant.address,
+        adminPassword: newTenant.adminPassword
       });
       setShowCreateModal(false);
-      setNewTenant({ name: '', cnpj: '', estado: '', email: '', address: '' });
+      setNewTenant({ name: '', cnpj: '', state: '', email: '', address: '', adminPassword: '' });
       await loadTenants();
-      alert("Tenant criado com sucesso! Você pode criar o usuário administrador através da gestão de usuários da organização.");
+      alert("Tenant criado com sucesso! Use email: " + newTenant.email + " e senha: " + newTenant.adminPassword + " para criar o usuário admin.");
     } catch (e: any) { 
       console.error("❌ Erro detalhado na criação:", e);
       alert("Erro ao criar: " + (e.message || "Verifique o console para detalhes")); 
@@ -292,9 +295,12 @@ export const AdminDashboard = () => {
                                 </div>
                                 {t.address && (
                                     <div className="flex items-center text-[10px] text-slate-400 font-medium max-w-xs truncate">
-                                        <MapPin size={10} className="mr-1 flex-shrink-0" /> {t.address}
-                                    </div>
+                                    <MapPin size={10} className="mr-1 flex-shrink-0" /> {t.address}
+                                </div>
                                 )}
+                                <div className="flex items-center text-[10px] text-slate-400 font-medium">
+                                    <span className="font-bold">{t.state || 'N/A'}</span>
+                                </div>
                             </div>
                         </td>
                         <td className="px-8 py-7">
@@ -381,8 +387,8 @@ export const AdminDashboard = () => {
                       <input className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all" placeholder="00.000.000/0000-00" value={newTenant.cnpj} onChange={(e) => setNewTenant({ ...newTenant, cnpj: e.target.value })} />
                   </div>
                   <div>
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">UF</label>
-                      <input className="w-full border-2 border-slate-100 p-4 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all uppercase font-bold" placeholder="GO" maxLength={2} value={newTenant.estado} onChange={(e) => setNewTenant({ ...newTenant, estado: e.target.value.toUpperCase() })} />
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Estado</label>
+                      <input className="w-full border-2 border-slate-100 p-4 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all uppercase font-bold" placeholder="GO" maxLength={2} value={newTenant.state} onChange={(e) => setNewTenant({ ...newTenant, state: e.target.value.toUpperCase() })} />
                   </div>
                 </div>
 
@@ -400,6 +406,18 @@ export const AdminDashboard = () => {
                 <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">E-mail do Administrador</label>
                     <input className="w-full border-2 border-slate-100 p-4 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all" placeholder="admin@municipio.gov.br" value={newTenant.email} onChange={(e) => setNewTenant({ ...newTenant, email: e.target.value.toLowerCase() })} />
+                </div>
+
+                <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Senha Inicial do Administrador</label>
+                    <input 
+                        type="password"
+                        className="w-full border-2 border-slate-100 p-4 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all" 
+                        placeholder="Digite uma senha segura" 
+                        value={newTenant.adminPassword} 
+                        onChange={(e) => setNewTenant({ ...newTenant, adminPassword: e.target.value })} 
+                    />
+                    <p className="text-[9px] text-slate-400 mt-1 ml-1">Esta será a senha para o administrador fazer login após criação.</p>
                 </div>
             </div>
 
@@ -436,8 +454,8 @@ export const AdminDashboard = () => {
                       <input className="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all" placeholder="00.000.000/0000-00" value={editingTenant.cnpj || ''} onChange={(e) => setEditingTenant({...editingTenant, cnpj: e.target.value})} />
                   </div>
                   <div>
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">UF</label>
-                      <input className="w-full border-2 border-slate-100 p-4 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all uppercase font-bold" placeholder="GO" maxLength={2} value={editingTenant.estado || ''} onChange={(e) => setEditingTenant({...editingTenant, estado: e.target.value.toUpperCase()})} />
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Estado</label>
+                      <input className="w-full border-2 border-slate-100 p-4 rounded-2xl outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all uppercase font-bold" placeholder="GO" maxLength={2} value={editingTenant.state || ''} onChange={(e) => setEditingTenant({...editingTenant, state: e.target.value.toUpperCase()})} />
                   </div>
                 </div>
 

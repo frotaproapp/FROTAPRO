@@ -164,7 +164,7 @@ export interface Tenant {
   id: string;
   name: string;
   cnpj?: string;
-  estado?: string;
+  state?: string;
   email?: string;
   address?: string;
   active: boolean;
