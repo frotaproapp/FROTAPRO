@@ -202,17 +202,19 @@ export const Viagens = () => {
                                         <option value="OUTROS">OUTROS (Cadastrar Novo)</option>
                                       </select>
                                       {editingTrip.type === 'OUTROS' && (
-                                        <input 
-                                          className={inputClass} 
-                                          placeholder="Digite o tipo de translado..." 
-                                          value={customTripType} 
-                                          onChange={e => {
-                                            const value = e.target.value.toUpperCase();
-                                            setCustomTripType(value);
-                                            setEditingTrip({...editingTrip, type: value || 'OUTROS'});
-                                          }} 
-                                          disabled={viewOnly}
-                                        />
+                                        <div>
+                                          <input 
+                                            className={inputClass} 
+                                            placeholder="Digite o tipo de translado..." 
+                                            value={customTripType} 
+                                            onChange={e => {
+                                              const value = e.target.value.toUpperCase();
+                                              setCustomTripType(value);
+                                              setEditingTrip({...editingTrip, type: value || 'OUTROS'});
+                                            }} 
+                                            disabled={viewOnly}
+                                          />
+                                        </div>
                                       )}
                                     </div>
                                   </div>
