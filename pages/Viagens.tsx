@@ -112,6 +112,38 @@ export const Viagens = () => {
             }
           }
           const payload = { ...editingTrip };
+          
+          // Map camelCase to snake_case for Supabase
+          payload.trip_type = payload.type;
+          delete payload.type;
+          payload.driver_id = payload.driverId;
+          delete payload.driverId;
+          payload.vehicle_id = payload.vehicleId;
+          delete payload.vehicleId;
+          if (payload.kmIn !== undefined && payload.kmIn !== 0) {
+            payload.km_in = payload.kmIn;
+          }
+          delete payload.kmIn;
+          if (payload.dateReturn && payload.dateReturn !== '') {
+            payload.date_return = payload.dateReturn;
+          }
+          delete payload.dateReturn;
+          if (payload.timeReturn && payload.timeReturn !== '') {
+            payload.time_return = payload.timeReturn;
+          }
+          delete payload.timeReturn;
+          if (payload.patient) {
+            payload.patient_data = payload.patient;
+            delete payload.patient;
+          }
+          if (payload.passengerList) {
+            payload.passenger_list = payload.passengerList;
+            delete payload.passengerList;
+          }
+          if (payload.tripChecklist) {
+            payload.checklist = payload.tripChecklist;
+            delete payload.tripChecklist;
+          }
           if (payload.patient) payload.patient.cpf = payload.patient.cpf.replace(/\D/g, '');
           if (payload.patient?.companionCpf) payload.patient.companionCpf = payload.patient.companionCpf.replace(/\D/g, '');
           if (payload.passengerList) {
