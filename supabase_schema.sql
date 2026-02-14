@@ -170,7 +170,7 @@ DROP POLICY IF EXISTS "Usuários podem atualizar seu próprio perfil" ON members
 DROP POLICY IF EXISTS "Administradores veem membros da mesma organização" ON members;
 
 -- Política única e segura para todos os usuários autenticados
-CREATE POLICY "Acesso total para usuários autenticados" ON members FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Acesso total para usuários autenticados" ON members FOR ALL USING (true);
 
 -- Políticas Simplificadas (Acesso por Organização)
 CREATE POLICY "Acesso por organização secretarias" ON secretarias FOR ALL USING (true);
