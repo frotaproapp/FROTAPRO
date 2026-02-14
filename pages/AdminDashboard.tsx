@@ -213,6 +213,11 @@ export const AdminDashboard = () => {
       );
   }
 
+  if (user && !hasRole('SUPER_ADMIN')) {
+    navigate('/');
+    return null;
+  }
+
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden font-sans">
       <aside className="w-80 bg-slate-900 text-white flex flex-col shadow-2xl z-20">
