@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { UserRole, LicenseStatus } from '../types';
 import { supabase } from './supabaseClient';
 
@@ -30,6 +30,8 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [userReady, setUserReady] = useState(false);
+
+  const initializing = useRef(true);
 
   const fetchProfile = async (userId: string): Promise<AppUser | null> => {
     try {
@@ -208,11 +210,13 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
 
     initAuth();
 
+    initializing.current = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session ? 'session exists' : 'no session');
       
       // Ignora mudanças se ainda estiver inicializando
-      if (isInitializing) {
+      if (initializing.current) {
         console.log('Ignorando mudança de auth state - inicialização em andamento');
         return;
       }
