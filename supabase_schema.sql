@@ -183,6 +183,7 @@ CREATE POLICY "Acesso por organização simulações DR" ON dr_simulations FOR A
 CREATE POLICY "Acesso por organização auditoria" ON audit_logs FOR ALL USING (true);
 
 -- 14. PERMISSÕES DE ACESSO (GRANT)
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, authenticated, anon, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, authenticated, anon, service_role;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, authenticated, anon, service_role;
