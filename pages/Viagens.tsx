@@ -205,6 +205,7 @@ export const Viagens = () => {
                                       </select></div>
                                   </div>
                           </div>
+                          </div>
 
                           {/* Ocupantes - Condicional baseado no tipo de veículo */}
                           <div className="border border-gray-300 rounded-lg p-3">
