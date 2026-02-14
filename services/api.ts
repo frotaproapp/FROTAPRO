@@ -158,6 +158,12 @@ export const api = {
         console.error("❌ Erro ao atualizar viagem:", error);
         throw error;
       }
+      
+      // Update vehicle odometer if trip is finalized
+      if (updateData.status === 'CONCLUIDA' && updateData.km_in && updateData.vehicle_id) {
+        await supabase.from('vehicles').update({ current_km: updateData.km_in }).eq('id', updateData.vehicle_id);
+      }
+      
       return data;
     }
   },
