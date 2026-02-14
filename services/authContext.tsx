@@ -56,41 +56,6 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
 
       console.log('Membro encontrado:', memberData.name);
 
-      // Lógica simplificada de promoção automática
-      const ADMIN_EMAIL = 'frotaproapp@gmail.com';
-      
-      // Verificações rápidas de promoção (apenas se necessário)
-      if (memberData.email.toLowerCase() === ADMIN_EMAIL && memberData.role !== UserRole.SUPER_ADMIN) {
-        console.info("Promovendo para SUPER_ADMIN...");
-        await supabase
-          .from('members')
-          .update({ role: UserRole.SUPER_ADMIN })
-          .eq('id', userId);
-        memberData.role = UserRole.SUPER_ADMIN;
-      }
-
-      // Verificação de ADMIN_TENANT simplificada
-      if (memberData.role !== UserRole.ADMIN_TENANT && memberData.role !== UserRole.SUPER_ADMIN) {
-        const { data: currentOrg } = await supabase
-          .from('organizations')
-          .select('id')
-          .eq('email', memberData.email.toLowerCase())
-          .maybeSingle();
-
-        if (currentOrg) {
-          console.info("Promovendo para ADMIN_TENANT...");
-          await supabase
-            .from('members')
-            .update({ 
-              role: UserRole.ADMIN_TENANT,
-              organization_id: currentOrg.id 
-            })
-            .eq('id', userId);
-          memberData.role = UserRole.ADMIN_TENANT;
-          memberData.organization_id = currentOrg.id;
-        }
-      }
-
       // Busca rápida do status da organização (se existir)
       let license_status: LicenseStatus = LicenseStatus.ACTIVE;
       if (memberData.organization_id) {
