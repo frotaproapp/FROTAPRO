@@ -107,61 +107,30 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
 
           if (mounted) {
             setUser(profile);
-            setLoading(false);
-            setUserReady(true);
           }
         } else {
           if (mounted) {
             setUser(null);
-            setLoading(false);
-            setUserReady(true);
           }
         }
-
       } catch (error) {
         console.error('Erro na inicialização:', error);
         if (mounted) {
           setUser(null);
+        }
+      } finally {
+        if (mounted) {
           setLoading(false);
           setUserReady(true);
         }
-      } finally {
-        initializing.current = false;
-        console.log('Inicialização concluída');
+        console.log('Auth estabilizado.');
       }
     };
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event);
-
-        if (initializing.current) {
-          console.log('Ignorando mudança durante init');
-          return;
-        }
-
-        if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
-          if (mounted) {
-            setUser(profile);
-            setLoading(false);
-            setUserReady(true);
-          }
-        } else {
-          if (mounted) {
-            setUser(null);
-            setLoading(false);
-            setUserReady(true);
-          }
-        }
-      }
-    );
-
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 
