@@ -112,6 +112,14 @@ export const Viagens = () => {
               return;
             }
           }
+          
+          // Validate vehicle and driver selection
+          if (!editingTrip.vehicleId || editingTrip.vehicleId === '') {
+            throw new Error("Selecione um veículo válido da lista de sugestões.");
+          }
+          if (!editingTrip.driverId || editingTrip.driverId === '') {
+            throw new Error("Selecione um condutor válido da lista de sugestões.");
+          }
           const payload = { ...editingTrip };
           
           // Map camelCase to snake_case for Supabase
