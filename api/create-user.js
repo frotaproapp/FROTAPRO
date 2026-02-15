@@ -5,6 +5,9 @@ import {
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+console.log("SUPABASE_URL:", !!supabaseUrl);
+console.log("SUPABASE_SERVICE_ROLE_KEY:", !!supabaseServiceKey);
+
 if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error('Missing required environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
 }
