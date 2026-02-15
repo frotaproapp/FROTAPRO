@@ -32,12 +32,13 @@ export const AdminDashboard = () => {
   const navigate = useNavigate();
   
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newTenant, setNewTenant] = useState({ 
-    name: '', 
-    cnpj: '', 
-    state: '', 
-    email: '', 
+  const [newTenant, setNewTenant] = useState<{ name: string; cnpj: string; state: string; email: string; address: string; adminEmail: string; adminPassword: string; }>({
+    name: '',
+    cnpj: '',
+    state: '',
+    email: '',
     address: '',
+    adminEmail: '',
     adminPassword: ''
   });
 
@@ -150,25 +151,45 @@ export const AdminDashboard = () => {
       if (!newTenant.name) missing.push('Nome');
       if (!newTenant.email) missing.push('E-mail');
       if (!newTenant.cnpj) missing.push('CNPJ');
-      if (!newTenant.adminPassword) missing.push('Senha');
+      if (!newTenant.adminEmail) missing.push('E-mail do administrador');
+      if (!newTenant.adminPassword) missing.push('Senha do administrador');
       alert(`${missing.join(', ')} ${missing.length > 1 ? 'são obrigatórios' : 'é obrigatório'}.`);
       return;
     }
     
     setLoadingData(true);
     try {
-      await api.admin.createTenant({ 
-        name: newTenant.name, 
-        email: newTenant.email, 
-        cnpj: newTenant.cnpj, 
+      const tenant = await api.admin.createTenant({
+        name: newTenant.name,
+        email: newTenant.email,
+        cnpj: newTenant.cnpj,
         state: newTenant.state,
         address: newTenant.address,
         adminPassword: newTenant.adminPassword
+      }) as any;
+
+      // Criar usuário administrador para o tenant
+      await api.org.createUser(tenant.id, {
+        email: newTenant.adminEmail,
+        password: newTenant.adminPassword,
+        name: 'Administrador'
       });
-      setShowCreateModal(false);
-      setNewTenant({ name: '', cnpj: '', state: '', email: '', address: '', adminPassword: '' });
+
+      // Atualizar lista de tenants
       await loadTenants();
-      alert("Tenant criado com sucesso! Use email: " + newTenant.email + " e senha: " + newTenant.adminPassword + " para criar o usuário admin.");
+
+      // Limpar formulário
+      setNewTenant({
+        name: '',
+        cnpj: '',
+        state: '',
+        email: '',
+        address: '',
+        adminEmail: '',
+        adminPassword: ''
+      });
+
+      setShowCreateModal(false);
     } catch (e: any) { 
       console.error("❌ Erro detalhado na criação:", e);
       alert("Erro ao criar: " + (e.message || "Verifique o console para detalhes")); 
