@@ -95,6 +95,26 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (initializing.current) return;
+
+      if (event === 'SIGNED_IN' && session) {
+        const memberData = await fetchProfile(session.user.id);
+        if (mounted) {
+          setUser(memberData);
+          setUserReady(true);
+          setLoading(false);
+          console.log('Auth estabilizado via onAuthStateChange.');
+        }
+      } else if (event === 'SIGNED_OUT') {
+        if (mounted) {
+          setUser(null);
+          setUserReady(true);
+          setLoading(false);
+        }
+      }
+    });
+
     const initAuth = async () => {
       console.log('Iniciando autenticação...');
 
@@ -124,6 +144,7 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
           setUserReady(true);
         }
         console.log('Auth estabilizado.');
+        initializing.current = false;
       }
     };
 
@@ -131,6 +152,7 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
 
     return () => {
       mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
